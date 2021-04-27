@@ -74,6 +74,9 @@ func fetchInteger(inputbytes []byte) (value int, pos int, err error) {
 }
 
 func fetchBulkString(inputbytes []byte) (str string, pos int, err error) {
+	if len(inputbytes) > 2 && string(inputbytes[1:3]) == "-1" {
+		return "", 5, nil
+	}
 	loc := bulkStringRegex.FindIndex(inputbytes)
 	if len(loc) == 0 {
 		return
@@ -81,11 +84,6 @@ func fetchBulkString(inputbytes []byte) (str string, pos int, err error) {
 	num, converr := strconv.Atoi(string(inputbytes[loc[0]+1 : loc[1]-2]))
 	err = converr
 	if err != nil {
-		return
-	}
-	if num < 0 {
-		str = ""
-		pos = loc[1]
 		return
 	}
 	pos = loc[1] + num + 2

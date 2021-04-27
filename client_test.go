@@ -55,6 +55,10 @@ func testBulk(t *testing.T, s string) {
 func TestBulkString(t *testing.T) {
 	testBulk(t, "hello of nice world")
 	testBulk(t, "hello 異世界")
+	orig := ""
+	bulkstr := []byte("$-1\r\n")
+	fetchstr, pos, _ := fetchBulkString(bulkstr)
+	assertStr(t, fetchstr, orig, pos, len(bulkstr))
 }
 
 func assertNum(t *testing.T, got, expect, pos, expectpos int) {
