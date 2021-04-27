@@ -18,6 +18,7 @@ var (
 	errorRegex        = regexp.MustCompile(`-.*\s{2}`)
 	integerRegex      = regexp.MustCompile(`:\d+\s{2}`)
 	bulkStringRegex   = regexp.MustCompile(`\$\d+\s{2}`)
+	arrayRegex        = regexp.MustCompile(`\*\d+\s{2}`)
 )
 
 type redisType byte
@@ -32,8 +33,26 @@ const (
 	bufferLength               = 1024
 )
 
-func fetchArray(length int, inputbytes []byte) ([]interface{}, error) {
-	return nil, fmt.Errorf("need implementation")
+func fetchArray(inputbytes []byte) (values []interface{}, pos int, err error) {
+	loc := arrayRegex.FindIndex(inputbytes)
+	if len(loc) == 0 {
+		return
+	}
+	elemnum, converr := strconv.Atoi(string(inputbytes[loc[0]+1 : loc[1]-2]))
+	if converr != nil {
+		err = converr
+		return
+	}
+	values = make([]interface{}, elemnum)
+	pos = loc[2]
+	rest := inputbytes[pos:]
+	for i := 0; i < elemnum; i++ {
+		if len(rest) <= 0 {
+			break
+		}
+		// switch redisType(rest[0])
+	}
+	return
 }
 
 func fetchSimpleString(inputbytes []byte) (string, int, error) {
@@ -154,6 +173,10 @@ func interpret(c net.Conn, buff []byte) (complete bool, restbuf []byte, err erro
 		log.Println(str)
 		err = errstr
 	case arrayType:
+		vals, idx, errstr := fetchArray(buff)
+		restbuf = buff[idx:]
+		log.Println(vals)
+		err = errstr
 	case errorType:
 		if len(buff) > 1 && buff[1] == '1' {
 			return
