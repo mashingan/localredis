@@ -31,4 +31,10 @@ func TestFetchSimpleString(t *testing.T) {
 	fetchstr, pos, _ = fetchSimpleString(rawbyte)
 	assertStr(t, fetchstr, expected, pos,
 		strings.Index(string(rawbyte), expected)+len(expected)+2)
+
+	expected = "++hello    world--"
+	rawbyte = []byte("+++hello    world--\r\nnananan")
+	fetchstr, pos, _ = fetchSimpleString(rawbyte)
+	assertStr(t, fetchstr, expected, pos,
+		strings.Index(string(rawbyte), expected)+len(expected)+2)
 }
