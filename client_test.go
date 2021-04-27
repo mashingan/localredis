@@ -56,3 +56,18 @@ func TestBulkString(t *testing.T) {
 	testBulk(t, "hello of nice world")
 	testBulk(t, "hello 異世界")
 }
+
+func assertNum(t *testing.T, got, expect, pos, expectpos int) {
+	if got != expect {
+		t.Errorf("Invalid string fetch, expect %d, got %d\n", expect, got)
+	}
+	if pos != expectpos {
+		t.Errorf("Invalid position, expected %d, got %d\n", expectpos, pos)
+	}
+
+}
+func TestInteger(t *testing.T) {
+	raw := []byte(":10\r\n")
+	fetchnum, pos, _ := fetchInteger(raw)
+	assertNum(t, fetchnum, 10, pos, len(raw))
+}
