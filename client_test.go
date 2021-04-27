@@ -44,9 +44,15 @@ func createBulkString(input string) string {
 	return fmt.Sprintf("$%d\r\n%s\r\n", len(input), input)
 }
 
-func TestBulkString(t *testing.T) {
+func testBulk(t *testing.T, s string) {
 	orig := "hello of nice world"
 	bulkstr := createBulkString(orig)
 	fetchstr, pos, _ := fetchBulkString([]byte(bulkstr))
 	assertStr(t, fetchstr, orig, pos, len(bulkstr))
+
+}
+
+func TestBulkString(t *testing.T) {
+	testBulk(t, "hello of nice world")
+	testBulk(t, "hello 異世界")
 }
