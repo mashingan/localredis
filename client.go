@@ -30,7 +30,7 @@ const (
 	bulkStringType   redisType = '$'
 	arrayType        redisType = '*'
 	terminal                   = "\r\n"
-	bufferLength               = 1024
+	bufferLength               = 4096
 )
 
 func fetchArray(inputbytes []byte) (values []interface{}, pos int, err error) {
