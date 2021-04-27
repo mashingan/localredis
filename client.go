@@ -193,7 +193,7 @@ func handleCommand(c net.Conn) {
 			return
 		}
 		complete := false
-		rest := buff
+		rest := buff[:n]
 		for !complete {
 			var err error
 			complete, rest, err = interpret(c, rest)
