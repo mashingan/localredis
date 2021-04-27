@@ -85,3 +85,40 @@ func TestInteger(t *testing.T) {
 	testNum(t, 10)
 	testNum(t, 2555)
 }
+
+func TestArray(t *testing.T) {
+	rawstr := "*5\r\n"
+	for i := 1; i < 5; i++ {
+		rawstr += fmt.Sprintf(":%d\r\n", i)
+	}
+	rawstr += createBulkString("Foobar")
+	actualraw := []byte("*5\r\n:1\r\n:2\r\n:3\r\n:4\r\n$6\r\nFoobar\r\n")
+	if rawstr != string(actualraw) {
+		t.Fatalf("invalid creating array: got %s expected %s\n", rawstr, string(actualraw))
+	}
+	arrs, pos, _ := fetchArray(actualraw)
+	if len(arrs) == 0 {
+		t.Fatalf("empty values, expected %d elements", 5)
+	}
+	if pos != len(actualraw) {
+		t.Errorf("invalid pos, got %d expected %d\n", pos, len(actualraw))
+	}
+
+	for i, o := range arrs[:3] {
+		num, ok := o.(int)
+		if !ok {
+			t.Errorf("invalid integer num: %v\n", o)
+			continue
+		}
+		if num != i+1 {
+			t.Errorf("invalid integer value: got %d expected %d\n", num, i+1)
+		}
+	}
+	foobar, ok := arrs[4].(string)
+	if !ok {
+		t.Fatalf("cannot convert/invalid %v to string\n", arrs[4])
+	}
+	if foobar != "Foobar" {
+		t.Errorf("invalid string value, got '%s' expected Foobar\n", foobar)
+	}
+}

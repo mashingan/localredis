@@ -48,7 +48,7 @@ func fetchArray(inputbytes []byte) (values []interface{}, pos int, err error) {
 		return
 	}
 	values = make([]interface{}, elemnum)
-	pos = loc[2]
+	pos = loc[1]
 	rest := inputbytes[pos:]
 	for i := 0; i < elemnum; i++ {
 		if len(rest) <= 0 {
