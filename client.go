@@ -14,6 +14,7 @@ import (
 var (
 	internalStorage   sync.Map
 	simpleStringRegex = regexp.MustCompile(`\+.*\s{2}`)
+	errorRegex        = regexp.MustCompile(`\-.*\s{2}`)
 )
 
 type redisType byte
@@ -46,6 +47,14 @@ func fetchInteger(inputbytes []byte) (int, error) {
 
 func fetchBulkString(strcount int, inputbytes []byte) ([]string, error) {
 	return nil, fmt.Errorf("need implementation")
+}
+
+func fetchError(inputbytes []byte) (str string, pos int, err error) {
+	loc := errorRegex.FindIndex(inputbytes)
+	if len(loc) == 0 {
+		return
+	}
+	return string(inputbytes[loc[0]+1 : loc[1]-2]), loc[1], nil
 }
 
 func ListenAndServe(addressPort string) error {
@@ -100,6 +109,7 @@ func handleCommand(c net.Conn) {
 }
 
 func interpret(c net.Conn, buff []byte) (complete bool, restbuf []byte, err error) {
+	restbuf = buff
 	switch redisType(buff[0]) {
 	case simpleStringType:
 		str, idx, errstr := fetchSimpleString(buff)
@@ -110,6 +120,15 @@ func interpret(c net.Conn, buff []byte) (complete bool, restbuf []byte, err erro
 	case integerType:
 	case bulkStringType:
 	case arrayType:
+	case errorType:
+		if len(buff) > 1 && buff[1] == '1' {
+			return
+		}
+		str, idx, errstr := fetchError(buff)
+		restbuf = buff[idx:]
+		log.Println(str)
+		err = errstr
+
 	default:
 	}
 	return
