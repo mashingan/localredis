@@ -64,6 +64,11 @@ func fetchBulkString(inputbytes []byte) (str string, pos int, err error) {
 	if err != nil {
 		return
 	}
+	if num < 0 {
+		str = ""
+		pos = loc[1]
+		return
+	}
 	pos = loc[1] + num + 2
 	str = string(inputbytes[loc[1] : pos-2])
 	return
