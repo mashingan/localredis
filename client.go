@@ -15,8 +15,9 @@ import (
 var (
 	internalStorage   sync.Map
 	simpleStringRegex = regexp.MustCompile(`\+.*\s{2}`)
-	errorRegex        = regexp.MustCompile(`\-.*\s{2}`)
-	integerRegex      = regexp.MustCompile(`\:\d*\s{2}`)
+	errorRegex        = regexp.MustCompile(`-.*\s{2}`)
+	integerRegex      = regexp.MustCompile(`:\d+\s{2}`)
+	bulkStringRegex   = regexp.MustCompile(`\$\d+\s{2}`)
 )
 
 type redisType byte
@@ -53,8 +54,19 @@ func fetchInteger(inputbytes []byte) (value int, pos int, err error) {
 	return
 }
 
-func fetchBulkString(strcount int, inputbytes []byte) ([]string, error) {
-	return nil, fmt.Errorf("need implementation")
+func fetchBulkString(inputbytes []byte) (str string, pos int, err error) {
+	loc := bulkStringRegex.FindIndex(inputbytes)
+	if len(loc) == 0 {
+		return
+	}
+	num, converr := strconv.Atoi(string(inputbytes[loc[0]+1 : loc[1]-2]))
+	err = converr
+	if err != nil {
+		return
+	}
+	pos = loc[1] + num + 2
+	str = string(inputbytes[loc[1] : pos-2])
+	return
 }
 
 func fetchError(inputbytes []byte) (str string, pos int, err error) {
@@ -126,13 +138,17 @@ func interpret(c net.Conn, buff []byte) (complete bool, restbuf []byte, err erro
 		log.Println(str)
 		err = errstr
 	case integerType:
-	case bulkStringType:
-	case arrayType:
-		str, idx, errstr := fetchInteger(buff)
+		valint, idx, errstr := fetchInteger(buff)
 		restbuf = buff[idx:]
 		log.Println(errstr)
+		log.Println(valint)
+		err = errstr
+	case bulkStringType:
+		str, idx, errstr := fetchBulkString(buff)
+		restbuf = buff[idx:]
 		log.Println(str)
 		err = errstr
+	case arrayType:
 	case errorType:
 		if len(buff) > 1 && buff[1] == '1' {
 			return
