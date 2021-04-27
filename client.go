@@ -15,10 +15,10 @@ import (
 var (
 	internalStorage   sync.Map
 	simpleStringRegex = regexp.MustCompile(`\+.*\r\n`)
-	errorRegex        = regexp.MustCompile(`-.*\s{2}`)
-	integerRegex      = regexp.MustCompile(`:\d+\s{2}`)
-	bulkStringRegex   = regexp.MustCompile(`\$\d+\s{2}`)
-	arrayRegex        = regexp.MustCompile(`\*\d+\s{2}`)
+	errorRegex        = regexp.MustCompile(`-.*\r\n`)
+	integerRegex      = regexp.MustCompile(`:\d+\r\n`)
+	bulkStringRegex   = regexp.MustCompile(`\$\d+\r\n`)
+	arrayRegex        = regexp.MustCompile(`\*\d+\r\n`)
 )
 
 type redisType byte
