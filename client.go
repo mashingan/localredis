@@ -95,6 +95,14 @@ func fetchArray(inputbytes []byte) (values []interface{}, pos int, err error) {
 			values[i] = num
 			err = theerr
 			rest = rest[newpos:]
+		case errorType:
+			valerr, newpos, theerr := fetchError(rest)
+			if newpos > 0 {
+				pos += newpos
+			}
+			values[i] = valerr
+			err = theerr
+			rest = rest[newpos:]
 		}
 	}
 	return
@@ -136,12 +144,12 @@ func fetchBulkString(inputbytes []byte) (str string, pos int, err error) {
 	return
 }
 
-func fetchError(inputbytes []byte) (str string, pos int, err error) {
+func fetchError(inputbytes []byte) (errstr error, pos int, err error) {
 	loc := errorRegex.FindIndex(inputbytes)
 	if len(loc) == 0 {
 		return
 	}
-	return string(inputbytes[loc[0]+1 : loc[1]-2]), loc[1], nil
+	return fmt.Errorf("%s", string(inputbytes[loc[0]+1:loc[1]-2])), loc[1], nil
 }
 
 func ListenAndServe(addressPort string) error {
@@ -224,9 +232,9 @@ func interpret(c net.Conn, buff []byte) (complete bool, restbuf []byte, err erro
 		if len(buff) > 1 && buff[1] == '1' {
 			return
 		}
-		str, idx, errstr := fetchError(buff)
+		valerr, idx, errstr := fetchError(buff)
 		restbuf = buff[idx:]
-		log.Println(str)
+		log.Println(valerr)
 		err = errstr
 
 	default:

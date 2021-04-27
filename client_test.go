@@ -133,4 +133,51 @@ func TestArray(t *testing.T) {
 	if rawstr != string(actualraw) {
 		t.Fatalf("invalid raw, got %s expected %s\r\n", rawstr, string(actualraw))
 	}
+	arrs, pos, _ = fetchArray(actualraw)
+	if len(arrs) == 0 {
+		t.Fatalf("empty values, expected %d elements", 2)
+	}
+	if pos != len(actualraw) {
+		t.Errorf("invalid pos, got %d expected %d\n", pos, len(actualraw))
+	}
+	arr1, ok := arrs[0].([]interface{})
+	if !ok {
+		t.Fatalf("invalid format, got %#v expected array\n", arrs[0])
+	}
+	if len(arr1) != 3 {
+		t.Errorf("invalid length, got %d expected 3\n", len(arr1))
+	}
+	for i, o := range arr1 {
+		num, ok := o.(int)
+		if !ok {
+			t.Errorf("invalid integer num: %v\n", o)
+			continue
+		}
+		if num != i+1 {
+			t.Errorf("invalid integer value: got %d expected %d\n", num, i+1)
+		}
+	}
+	arr2, ok := arrs[1].([]interface{})
+	if !ok {
+		t.Fatalf("invalid format, got %#v expected array\n", arrs[1])
+	}
+	if len(arr1) != 3 {
+		t.Errorf("invalid length, got %d expected 2\n", len(arr2))
+	}
+	foo, ok := arr2[0].(string)
+	if !ok {
+		t.Fatalf("invalid format, got %#v, expected string", arr2[0])
+	}
+	if foo != "Foo" {
+		t.Errorf("invalid string value, got %s, expected Foo", foo)
+
+	}
+	theerr, ok := arr2[1].(error)
+	if !ok {
+		t.Fatalf("invalid format, got %#v, expected error", arr2[1])
+	}
+	if theerr == nil || theerr.Error() != "Bar" {
+		t.Errorf("invalid error value, got %v, expected Bar", theerr)
+	}
+
 }
