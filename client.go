@@ -34,6 +34,10 @@ const (
 )
 
 func fetchArray(inputbytes []byte) (values []interface{}, pos int, err error) {
+	if len(inputbytes) > 2 && string(inputbytes[1:3]) == "-1" {
+		pos = 5
+		return
+	}
 	loc := arrayRegex.FindIndex(inputbytes)
 	if len(loc) == 0 {
 		return
@@ -50,7 +54,48 @@ func fetchArray(inputbytes []byte) (values []interface{}, pos int, err error) {
 		if len(rest) <= 0 {
 			break
 		}
-		// switch redisType(rest[0])
+		switch redisType(rest[0]) {
+		case arrayType:
+			theval, newpos, theerr := fetchArray(rest)
+			if newpos > 0 {
+				pos += newpos
+			}
+			if newpos == 5 && len(theval) == 0 {
+				values[i] = nil
+			} else {
+				values[i] = theval
+			}
+			err = theerr
+			rest = rest[newpos:]
+		case simpleStringType:
+			str, newpos, theerr := fetchSimpleString(rest)
+			if newpos > 0 {
+				pos += newpos
+			}
+			values[i] = str
+			err = theerr
+			rest = rest[newpos:]
+		case bulkStringType:
+			str, newpos, theerr := fetchBulkString(rest)
+			if newpos > 0 {
+				pos += newpos
+			}
+			if str == "" && newpos == 5 {
+				values[i] = nil
+			} else {
+				values[i] = str
+			}
+			err = theerr
+			rest = rest[newpos:]
+		case integerType:
+			num, newpos, theerr := fetchInteger(rest)
+			if newpos > 0 {
+				pos += newpos
+			}
+			values[i] = num
+			err = theerr
+			rest = rest[newpos:]
+		}
 	}
 	return
 }
