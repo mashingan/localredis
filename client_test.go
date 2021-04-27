@@ -66,8 +66,18 @@ func assertNum(t *testing.T, got, expect, pos, expectpos int) {
 	}
 
 }
+
+func createNumRepr(n int) string {
+	return fmt.Sprintf(":%d\r\n", n)
+}
+
+func testNum(t *testing.T, n int) {
+	raw := createNumRepr(n)
+	fetchnum, pos, _ := fetchInteger([]byte(raw))
+	assertNum(t, fetchnum, n, pos, len(raw))
+}
+
 func TestInteger(t *testing.T) {
-	raw := []byte(":10\r\n")
-	fetchnum, pos, _ := fetchInteger(raw)
-	assertNum(t, fetchnum, 10, pos, len(raw))
+	testNum(t, 10)
+	testNum(t, 2555)
 }
