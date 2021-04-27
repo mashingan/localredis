@@ -183,6 +183,7 @@ func ListenAndServe(addressPort string) error {
 
 func handleCommand(c net.Conn) {
 	defer c.Close()
+	var prevbuf []byte
 	for {
 		buff := make([]byte, bufferLength)
 		n, err := c.Read(buff)
@@ -192,15 +193,19 @@ func handleCommand(c net.Conn) {
 			log.Println(err)
 			return
 		}
-		complete := false
-		rest := buff[:n]
-		for !complete {
-			var err error
-			complete, rest, err = interpret(c, rest)
-			if err != nil {
-				log.Println(err)
-				return
-			}
+		var rest []byte
+		if len(prevbuf) > 0 {
+			rest = append(prevbuf, buff[:n]...)
+		} else {
+			rest = buff[:n]
+		}
+		_, rest, err = interpret(c, rest)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		if len(rest) > 0 {
+			prevbuf = append(prevbuf, rest...)
 		}
 	}
 }
