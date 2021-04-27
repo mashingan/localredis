@@ -1,6 +1,7 @@
 package localredis
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -37,4 +38,15 @@ func TestFetchSimpleString(t *testing.T) {
 	fetchstr, pos, _ = fetchSimpleString(rawbyte)
 	assertStr(t, fetchstr, expected, pos,
 		strings.Index(string(rawbyte), expected)+len(expected)+2)
+}
+
+func createBulkString(input string) string {
+	return fmt.Sprintf("$%d\r\n%s\r\n", len(input), input)
+}
+
+func TestBulkString(t *testing.T) {
+	orig := "hello of nice world"
+	bulkstr := createBulkString(orig)
+	fetchstr, pos, _ := fetchBulkString([]byte(bulkstr))
+	assertStr(t, fetchstr, orig, pos, len(bulkstr))
 }
