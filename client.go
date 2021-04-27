@@ -110,8 +110,6 @@ func fetchArray(inputbytes []byte) (values []interface{}, pos int, err error) {
 
 func fetchSimpleString(inputbytes []byte) (string, int, error) {
 	loc := simpleStringRegex.FindIndex(inputbytes)
-	log.Println("inputbytes:", string(inputbytes))
-	log.Println(loc)
 	if len(loc) == 0 {
 		return "", 0, nil
 	}
@@ -204,8 +202,11 @@ func handleCommand(c net.Conn) {
 			log.Println(err)
 			return
 		}
+		log.Println("rest:", rest)
 		if len(rest) > 0 {
 			prevbuf = append(prevbuf, rest...)
+		} else {
+			log.Println("rest is empty")
 		}
 	}
 }
@@ -245,6 +246,37 @@ func interpret(c net.Conn, buff []byte) (complete bool, restbuf []byte, err erro
 		err = errstr
 
 	default:
+	}
+	return
+}
+
+func createNumRepr(n int) string {
+	return fmt.Sprintf(":%d\r\n", n)
+}
+
+func createBulkString(input string) string {
+	return fmt.Sprintf("$%d\r\n%s\r\n", len(input), input)
+}
+
+func createSimpleString(input string) string {
+	return fmt.Sprintf("+%s\r\n", input)
+}
+
+func createArrayRepr(arrs []interface{}) (result string) {
+	result = fmt.Sprintf("*%d\r\n", len(arrs))
+	for _, ar := range arrs {
+		switch varr := ar.(type) {
+		case int:
+			result += createNumRepr(varr)
+		case string:
+			if strings.Contains(varr, "\n") || strings.Contains(varr, "\x00") {
+				result += createBulkString(varr)
+			} else {
+				result += createSimpleString(varr)
+			}
+		case []interface{}:
+			result += createArrayRepr(varr)
+		}
 	}
 	return
 }
