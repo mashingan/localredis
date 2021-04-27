@@ -38,6 +38,11 @@ func TestFetchSimpleString(t *testing.T) {
 	fetchstr, pos, _ = fetchSimpleString(rawbyte)
 	assertStr(t, fetchstr, expected, pos,
 		strings.Index(string(rawbyte), expected)+len(expected)+2)
+
+	expected = ""
+	rawbyte = []byte("+++hello    world--nnananan")
+	fetchstr, pos, _ = fetchSimpleString(rawbyte)
+	assertStr(t, fetchstr, expected, pos, 0)
 }
 
 func createBulkString(input string) string {

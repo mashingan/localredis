@@ -14,7 +14,7 @@ import (
 
 var (
 	internalStorage   sync.Map
-	simpleStringRegex = regexp.MustCompile(`\+.*\s{2}`)
+	simpleStringRegex = regexp.MustCompile(`\+.*\r\n`)
 	errorRegex        = regexp.MustCompile(`-.*\s{2}`)
 	integerRegex      = regexp.MustCompile(`:\d+\s{2}`)
 	bulkStringRegex   = regexp.MustCompile(`\$\d+\s{2}`)
@@ -110,6 +110,8 @@ func fetchArray(inputbytes []byte) (values []interface{}, pos int, err error) {
 
 func fetchSimpleString(inputbytes []byte) (string, int, error) {
 	loc := simpleStringRegex.FindIndex(inputbytes)
+	log.Println("inputbytes:", string(inputbytes))
+	log.Println(loc)
 	if len(loc) == 0 {
 		return "", 0, nil
 	}
