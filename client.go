@@ -2,6 +2,8 @@ package localredis
 
 import (
 	"fmt"
+	"net"
+	"strings"
 	"sync"
 )
 
@@ -34,4 +36,33 @@ func fetchInteger(inputbytes []byte) (int, error) {
 
 func fetchBulkString(strcount int, inputbytes []byte) ([]string, error) {
 	return nil, fmt.Errorf("need implementation")
+}
+
+func ListenAndServe(addressPort string) error {
+	l, err := net.Listen("tcp", addressPort)
+	if err != nil {
+		return err
+	}
+	defer l.Close()
+	acceptingFailure := 0
+	errorStackTrace := []error{}
+	for {
+		c, err := l.Accept()
+		if err != nil {
+			if acceptingFailure < 10 {
+				errorStackTrace = append(errorStackTrace, err)
+			} else {
+				msgString := make([]string, len(errorStackTrace)+1)
+				for i, preverr := range errorStackTrace {
+					msgString[i] = preverr.Error()
+				}
+				msgString[len(errorStackTrace)] = err.Error()
+				return fmt.Errorf(strings.Join(msgString, "\n"))
+			}
+			acceptingFailure++
+		}
+		go func(conn net.Conn) {
+
+		}(c)
+	}
 }
