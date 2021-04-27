@@ -2,6 +2,7 @@ package localredis
 
 import (
 	"fmt"
+	"net"
 	"strings"
 	"testing"
 )
@@ -45,10 +46,6 @@ func TestFetchSimpleString(t *testing.T) {
 	assertStr(t, fetchstr, expected, pos, 0)
 }
 
-func createBulkString(input string) string {
-	return fmt.Sprintf("$%d\r\n%s\r\n", len(input), input)
-}
-
 func testBulk(t *testing.T, s string) {
 	orig := "hello of nice world"
 	bulkstr := createBulkString(orig)
@@ -74,10 +71,6 @@ func assertNum(t *testing.T, got, expect, pos, expectpos int) {
 		t.Errorf("Invalid position, expected %d, got %d\n", expectpos, pos)
 	}
 
-}
-
-func createNumRepr(n int) string {
-	return fmt.Sprintf(":%d\r\n", n)
 }
 
 func testNum(t *testing.T, n int) {
@@ -185,4 +178,35 @@ func TestArray(t *testing.T) {
 		t.Errorf("invalid error value, got %v, expected Bar", theerr)
 	}
 
+}
+
+func TestListenAndServe(t *testing.T) {
+	addr := ":9025"
+	go ListenAndServe(addr)
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	orig := "hello world"
+	raw := []byte(createSimpleString(orig))
+	n, err := conn.Write(raw)
+	if err != nil {
+		t.Error(err)
+	}
+	if n < 1 {
+		t.Errorf("invalid sending, got sent 0, expected %d\n", len(raw))
+	}
+
+	orig = "hello 異世界"
+	raw = []byte(createBulkString(orig))
+	n, err = conn.Write(raw)
+	if err != nil {
+		t.Error(err)
+	}
+	if n < 1 {
+		t.Errorf("invalid sending, got sent 0, expected %d\n", len(raw))
+	}
+	// raw = []byte(createArrayRepr([]interface{}{
+	// 	"hello world"
+	// }))
 }
