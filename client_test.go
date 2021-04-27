@@ -121,4 +121,16 @@ func TestArray(t *testing.T) {
 	if foobar != "Foobar" {
 		t.Errorf("invalid string value, got '%s' expected Foobar\n", foobar)
 	}
+
+	// another case
+	rawstr = "*2\r\n"
+	rawstr += "*3\r\n"
+	for i := 1; i <= 3; i++ {
+		rawstr += fmt.Sprintf(":%d\r\n", i)
+	}
+	rawstr += "*2\r\n+Foo\r\n-Bar\r\n"
+	actualraw = []byte("*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Foo\r\n-Bar\r\n")
+	if rawstr != string(actualraw) {
+		t.Fatalf("invalid raw, got %s expected %s\r\n", rawstr, string(actualraw))
+	}
 }
