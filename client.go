@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -15,6 +16,7 @@ var (
 	internalStorage   sync.Map
 	simpleStringRegex = regexp.MustCompile(`\+.*\s{2}`)
 	errorRegex        = regexp.MustCompile(`\-.*\s{2}`)
+	integerRegex      = regexp.MustCompile(`\:\d*\s{2}`)
 )
 
 type redisType byte
@@ -41,8 +43,14 @@ func fetchSimpleString(inputbytes []byte) (string, int, error) {
 	return string(inputbytes[loc[0]+1 : loc[1]-2]), loc[1], nil
 }
 
-func fetchInteger(inputbytes []byte) (int, error) {
-	return 0, fmt.Errorf("need implementation")
+func fetchInteger(inputbytes []byte) (value int, pos int, err error) {
+	loc := integerRegex.FindIndex(inputbytes)
+	if len(loc) == 0 {
+		return
+	}
+	pos = loc[1]
+	value, err = strconv.Atoi(string(inputbytes[loc[0]+1 : loc[1]-2]))
+	return
 }
 
 func fetchBulkString(strcount int, inputbytes []byte) ([]string, error) {
@@ -120,6 +128,11 @@ func interpret(c net.Conn, buff []byte) (complete bool, restbuf []byte, err erro
 	case integerType:
 	case bulkStringType:
 	case arrayType:
+		str, idx, errstr := fetchInteger(buff)
+		restbuf = buff[idx:]
+		log.Println(errstr)
+		log.Println(str)
+		err = errstr
 	case errorType:
 		if len(buff) > 1 && buff[1] == '1' {
 			return
