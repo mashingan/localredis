@@ -190,6 +190,7 @@ func TestListenAndServe(t *testing.T) {
 	orig := "hello world"
 	raw := []byte(createSimpleString(orig))
 	n, err := conn.Write(raw)
+	t.Log("sent:", n)
 	if err != nil {
 		t.Error(err)
 	}
@@ -200,6 +201,7 @@ func TestListenAndServe(t *testing.T) {
 	orig = "hello 異世界"
 	raw = []byte(createBulkString(orig))
 	n, err = conn.Write(raw)
+	t.Log("sent:", n)
 	if err != nil {
 		t.Error(err)
 	}

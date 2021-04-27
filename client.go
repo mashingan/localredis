@@ -19,9 +19,13 @@ var (
 	integerRegex      = regexp.MustCompile(`:\d+\r\n`)
 	bulkStringRegex   = regexp.MustCompile(`\$\d+\r\n`)
 	arrayRegex        = regexp.MustCompile(`\*\d+\r\n`)
+	defaultClient     = Client{}
 )
 
 type redisType byte
+type Client struct {
+	listener net.Listener
+}
 
 const (
 	simpleStringType redisType = '+'
@@ -154,6 +158,7 @@ func fetchError(inputbytes []byte) (errstr error, pos int, err error) {
 
 func ListenAndServe(addressPort string) error {
 	l, err := net.Listen("tcp", addressPort)
+	defaultClient.listener = l
 	if err != nil {
 		return err
 	}
@@ -279,4 +284,8 @@ func createArrayRepr(arrs []interface{}) (result string) {
 		}
 	}
 	return
+}
+
+func Close() error {
+	return defaultClient.listener.Close()
 }
