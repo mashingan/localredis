@@ -13,7 +13,7 @@ import (
 
 var (
 	internalStorage   sync.Map
-	simpleStringRegex = regexp.MustCompile(`\+.*\\r\\n`)
+	simpleStringRegex = regexp.MustCompile(`\+.*\s{2}`)
 )
 
 type redisType byte
