@@ -208,6 +208,7 @@ func handleCommand(c net.Conn) {
 			return
 		}
 		var rest []byte
+		log.Println("prevbuf:", string(prevbuf))
 		if len(prevbuf) > 0 {
 			rest = append(prevbuf, buff[:n]...)
 		} else {
@@ -218,7 +219,7 @@ func handleCommand(c net.Conn) {
 			log.Println(err)
 			return
 		}
-		log.Println("rest:", rest)
+		log.Println("rest:", string(rest))
 		if len(rest) > 0 {
 			prevbuf = append(prevbuf, rest...)
 		} else {

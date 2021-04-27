@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 func assertStr(t *testing.T, fetchstr, expected string, pos, expectpos int) {
@@ -215,6 +216,7 @@ func TestListenAndServe(t *testing.T) {
 	if n < 1 {
 		t.Errorf("invalid sending, got sent 0, expected %d\n", len(raw))
 	}
+	time.Sleep(1 * time.Second)
 	Close()
 	w.Wait()
 	// raw = []byte(createArrayRepr([]interface{}{
