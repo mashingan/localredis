@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -181,8 +182,14 @@ func TestArray(t *testing.T) {
 }
 
 func TestListenAndServe(t *testing.T) {
+	var w sync.WaitGroup
+	w.Add(1)
 	addr := ":9025"
-	go ListenAndServe(addr)
+	// go ListenAndServe(addr)
+	go func(wg *sync.WaitGroup) {
+		defer w.Done()
+		ListenAndServe(addr)
+	}(&w)
 	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		t.Fatal(err)
@@ -208,6 +215,8 @@ func TestListenAndServe(t *testing.T) {
 	if n < 1 {
 		t.Errorf("invalid sending, got sent 0, expected %d\n", len(raw))
 	}
+	Close()
+	w.Wait()
 	// raw = []byte(createArrayRepr([]interface{}{
 	// 	"hello world"
 	// }))

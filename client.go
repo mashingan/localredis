@@ -162,7 +162,11 @@ func ListenAndServe(addressPort string) error {
 	if err != nil {
 		return err
 	}
-	defer l.Close()
+	defer func() {
+		if l != nil {
+			l.Close()
+		}
+	}()
 	acceptingFailure := 0
 	errorStackTrace := []error{}
 	for {
@@ -185,10 +189,17 @@ func ListenAndServe(addressPort string) error {
 }
 
 func handleCommand(c net.Conn) {
-	defer c.Close()
+	defer func() {
+		if c != nil {
+			c.Close()
+		}
+	}()
 	var prevbuf []byte
 	for {
 		buff := make([]byte, bufferLength)
+		if c == nil {
+			return
+		}
 		n, err := c.Read(buff)
 		if errors.Is(err, io.EOF) || n <= 0 {
 			return
