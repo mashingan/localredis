@@ -388,4 +388,52 @@ func TestTTL(t *testing.T) {
 	if !(buffread == ":10\r\n" || buffread == ":9\r\n") {
 		t.Errorf("invalid reply, expected 9 or 10, got %s\n", buffread)
 	}
+
+	arg := []interface{}{"hello-2"}
+	argex := append(arg, "px", 500)
+	newarg := []interface{}{"hello-2", "新たな稼働"}
+	setmap(mconn, newarg)
+	buff = make([]byte, 64)
+	nread, err = mconn.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	if nread <= 0 {
+		t.Error("could not read")
+	}
+	buffread = string(buff[:nread])
+	if buffread != "+OK\r\n" {
+		t.Errorf("invalid reply, expected OK, got %s\n", buffread)
+	}
+	getex(mconn, argex)
+	buff = make([]byte, 64)
+	nread, err = mconn.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	if nread <= 0 {
+		t.Error("could not read")
+	}
+	buffread = string(buff[:nread])
+	if buffread != createSimpleString("新たな稼働") {
+		t.Errorf("invalid reply, expected 新たな稼働, got %s\n", buffread)
+	}
+	mconn.buffer.Reset()
+	pttl(mconn, arg)
+	buff = make([]byte, 64)
+	nread, err = mconn.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	if nread <= 0 {
+		t.Error("could not read")
+	}
+	buffread = string(buff[:nread])
+	var buffnum int
+	fmt.Sscanf(buffread, ":%d\r\n", &buffnum)
+	t.Log("buffread:", buffread)
+	t.Log("buffnum:", buffnum)
+	if buffnum != 500 {
+		t.Errorf("invalid reply, expected ~500, got %d\n", buffnum)
+	}
 }
