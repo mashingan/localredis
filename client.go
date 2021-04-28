@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 var (
@@ -19,14 +18,14 @@ var (
 	integerRegex      = regexp.MustCompile(`:\d+\r\n`)
 	bulkStringRegex   = regexp.MustCompile(`\$\d+\r\n`)
 	arrayRegex        = regexp.MustCompile(`\*\d+\r\n`)
-	defaultClient     = Client{storage: sync.Map{}, persist: map[string]time.Time{}}
+	defaultClient     = Client{storage: sync.Map{}, persist: map[string]bool{}}
 )
 
 type redisType byte
 type Client struct {
 	listener net.Listener
 	storage  sync.Map
-	persist  map[string]time.Time
+	persist  map[string]bool
 }
 
 const (
