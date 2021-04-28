@@ -46,11 +46,12 @@ func runCommand(c net.Conn, vals []interface{}) {
 }
 
 var commandMap = map[string]commandExecutioner{
-	"set":   setmap,
-	"get":   getmap,
-	"ping":  pong,
-	"quit":  quit,
-	"getex": getex,
+	"set":     setmap,
+	"get":     getmap,
+	"ping":    pong,
+	"quit":    quit,
+	"getex":   getex,
+	"persist": persist,
 }
 
 func setmap(c net.Conn, args []interface{}) {
@@ -153,4 +154,29 @@ func getex(c net.Conn, args []interface{}) {
 		}(key, dur)
 	}
 	sendValue(c, val)
+}
+
+func persist(c net.Conn, args []interface{}) {
+	if len(args) < 1 {
+		sendError(c, "invalid format, no key sent")
+		return
+	}
+	key, ok := args[0].(string)
+	if !ok {
+		sendError(c, "invalid key type, need string")
+		return
+	}
+	_, avail := defaultClient.storage.Load(key)
+	_, persisted := defaultClient.persist[key]
+	if !avail || !persisted {
+		sendValue(c, 0)
+		return
+	}
+	if !persisted {
+		defaultClient.persist[key] = true
+		sendValue(c, 1)
+		return
+	}
+	sendValue(c, 0)
+
 }
