@@ -18,7 +18,7 @@ var (
 	integerRegex      = regexp.MustCompile(`:\d+\r\n`)
 	bulkStringRegex   = regexp.MustCompile(`\$\d+\r\n`)
 	arrayRegex        = regexp.MustCompile(`\*\d+\r\n`)
-	defaultClient     = Client{storage: sync.Map{}}
+	defaultClient     = Client{storage: sync.Map{}, persist: map[string]bool{}}
 )
 
 type redisType byte
