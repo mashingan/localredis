@@ -22,4 +22,4 @@ jobs:
       run: go build -v ./...
 
     - name: Test
-      run: go test -v client_test.go
+      run: go test -v client_test.go client.go comamnd.go
