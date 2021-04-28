@@ -149,6 +149,22 @@ func persist(c net.Conn, args []interface{}) {
 
 }
 
+func durationCalc(num int, timesetter string) (dur time.Duration) {
+	switch timesetter {
+	case "ex":
+		dur = time.Duration(num) * time.Second
+	case "px":
+		dur = time.Duration(num) * time.Millisecond
+	case "exat":
+		dur = time.Until(time.Unix(int64(num), 0))
+	case "pxat":
+		secnum := int64(num / 1000)
+		milnum := (int64(num) % secnum) * 1e6
+		dur = time.Until(time.Unix(secnum, milnum))
+	}
+	return
+}
+
 func setExpiration(c net.Conn, args []interface{}) {
 	key := args[0]
 	rest := args[1:]
@@ -168,19 +184,7 @@ func setExpiration(c net.Conn, args []interface{}) {
 		sendError(c, fmt.Sprintf("invalid numeric expiration, got %#v", rest[1]))
 		return
 	}
-	var dur time.Duration
-	switch timesetter {
-	case "ex":
-		dur = time.Duration(num) * time.Second
-	case "px":
-		dur = time.Duration(num) * time.Millisecond
-	case "exat":
-		dur = time.Until(time.Unix(int64(num), 0))
-	case "pxat":
-		secnum := int64(num / 1000)
-		milnum := (int64(num) % secnum) * 1e6
-		dur = time.Until(time.Unix(secnum, milnum))
-	}
+	dur := durationCalc(num, timesetter)
 	log.Println("dur:", dur)
 	keystr := key.(string)
 	defaultClient.timeout[keystr] = time.Now().Add(dur)
