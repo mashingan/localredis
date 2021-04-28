@@ -1,3 +1,3 @@
-module local-redis
+module localredis
 
 go 1.14

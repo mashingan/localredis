@@ -1,8 +1,6 @@
 package main
 
-import (
-	localredis "local-redis"
-)
+import "localredis"
 
 func main() {
 	localredis.ListenAndServe(redisListenAddr)
