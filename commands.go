@@ -83,7 +83,9 @@ func getmap(c net.Conn, args []interface{}) {
 			sendNil(c)
 		}
 		c.Write([]byte(createReply(val)))
+		return
 	}
+	sendNil(c)
 }
 
 func pong(c net.Conn, args []interface{}) {
