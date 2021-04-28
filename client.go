@@ -265,6 +265,23 @@ func interpret(c net.Conn, buff []byte) (complete bool, restbuf []byte, err erro
 		err = errstr
 
 	default:
+		inline := strings.Split(string(buff), "\n")
+		restbuf = []byte{}
+		if len(inline) < 1 {
+			return
+		}
+		cmd, ok := commandMap[strings.ToLower(inline[0])]
+		if !ok {
+			return
+		}
+		var args []interface{}
+		if len(inline) > 1 {
+			args = make([]interface{}, len(inline[1:]))
+			for i, s := range inline[1:] {
+				args[i] = s
+			}
+		}
+		cmd(c, args)
 	}
 	return
 }
@@ -296,6 +313,22 @@ func createArrayRepr(arrs []interface{}) (result string) {
 		case []interface{}:
 			result += createArrayRepr(varr)
 		}
+	}
+	return
+}
+
+func createReply(arg interface{}) (result string) {
+	switch v := arg.(type) {
+	case string:
+		if strings.Contains(v, "\n") || strings.Contains(v, "\x00") {
+			result = createBulkString(v)
+		} else {
+			result = createSimpleString(v)
+		}
+	case int:
+		result = createNumRepr(v)
+	case []interface{}:
+		result = createArrayRepr(v)
 	}
 	return
 }
