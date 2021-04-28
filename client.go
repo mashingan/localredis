@@ -335,5 +335,8 @@ func createReply(arg interface{}) (result string) {
 }
 
 func Close() error {
-	return defaultClient.listener.Close()
+	if defaultClient.listener != nil {
+		return defaultClient.listener.Close()
+	}
+	return nil
 }

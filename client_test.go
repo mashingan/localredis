@@ -196,7 +196,7 @@ func (m *mockConn) Write(p []byte) (int, error) {
 }
 
 func (m *mockConn) Read(p []byte) (int, error) {
-	return m.buffer.Write(p)
+	return m.buffer.Read(p)
 }
 
 func (m *mockConn) Close() error {
@@ -245,99 +245,62 @@ func newMockConn() *mockConn {
 }
 
 func TestGetexSet(t *testing.T) {
-	// conn := newMockConn()
 	mconn := newMockConn()
 	sethello := []interface{}{
 		"set", "hello", "異世界",
 	}
 	setmap(mconn, sethello[1:])
 	buff := make([]byte, 128)
-	nread, err := mconn.buffer.Read(buff)
+	nread, err := mconn.Read(buff)
 	if err != nil && !errors.Is(err, io.EOF) {
 		t.Fatal(err)
 	}
 	if nread <= 0 {
 		t.Error("could not read")
 	}
-	t.Log("buff:", buff)
-	t.Log("nread:", nread)
 	if string(buff[:nread]) != "+OK\r\n" {
 		t.Errorf("invalid reply, expected OK, got %s\n", buff[:nread])
 	}
-	// nwrite, err := conn.Write([]byte(createReply(sethello)))
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	// if nwrite <= 0 {
-	// 	t.Error("failed to write, sent zero bytes")
-	// }
-	// buff := make([]byte, 128)
-	// nread, err := conn.Read(buff)
-	// if err != nil && !errors.Is(err, io.EOF) {
-	// 	t.Fatal(err)
-	// }
-	// if string(buff[:nread]) != "+OK\r\n" {
-	// 	t.Errorf("invalid reply, expected OK, got %s\n", buff[:nread])
-	// }
 
-	// getarg := createReply([]interface{}{"get", "hello"})
-	// t.Log(getarg)
-	// nwrite, err = conn.Write([]byte(getarg))
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	// if nwrite <= 0 {
-	// 	t.Error("failed to write, sent zero bytes")
-	// }
-	// nread, err = conn.Read(buff)
-	// if err != nil && !errors.Is(err, io.EOF) {
-	// 	t.Fatal(err)
-	// }
-	// t.Log("buff:", string(buff))
-	// if string(buff[:nread]) != createSimpleString("異世界") {
-	// 	t.Errorf("invalid reply, expected 異世界, got %s\n", buff[:nread])
-	// }
+	mconn.buffer.Reset()
+	getarg := []interface{}{"get", "hello"}
+	getmap(mconn, getarg[1:])
+	nread, err = mconn.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	t.Log("buff:", string(buff))
+	if string(buff[:nread]) != createSimpleString("異世界") {
+		t.Errorf("invalid reply, expected 異世界, got %s\n", buff[:nread])
+	}
 
-	// getarg = createReply([]interface{}{
-	// 	"getex", "hello", "ex", 1,
-	// })
-	// t.Log(getarg)
-	// nwrite, err = conn.Write([]byte(getarg))
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	// if nwrite <= 0 {
-	// 	t.Error("failed to write, sent zero bytes")
-	// }
-	// nread, err = conn.Read(buff)
-	// if err != nil && !errors.Is(err, io.EOF) {
-	// 	t.Fatal(err)
-	// }
-	// t.Log("buff:", string(buff))
-	// if string(buff[:nread]) != createSimpleString("異世界") {
-	// 	t.Errorf("invalid reply, expected 異世界, got %s\n", buff[:nread])
-	// }
-	// time.Sleep(1 * time.Second)
-	// getarg = createReply([]interface{}{
-	// 	"getex", "hello", "ex", 1,
-	// })
-	// t.Log(getarg)
-	// nwrite, err = conn.Write([]byte(getarg))
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	// if nwrite <= 0 {
-	// 	t.Error("failed to write, sent zero bytes")
-	// }
-	// nread, err = conn.Read(buff)
-	// if err != nil && !errors.Is(err, io.EOF) {
-	// 	t.Fatal(err)
-	// }
-	// t.Log("buff:", string(buff))
-	// if string(buff[:nread]) != "-1\r\n" {
-	// 	t.Errorf("invalid reply, expected error(-1), got %s\n", buff[:nread])
-	// }
+	mconn.buffer.Reset()
+	getarg = []interface{}{
+		"getex", "hello", "ex", 1,
+	}
+	getex(mconn, getarg[1:])
+	nread, err = mconn.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	t.Log("buff:", string(buff))
+	if string(buff[:nread]) != createSimpleString("異世界") {
+		t.Errorf("invalid reply, expected 異世界, got %s\n", buff[:nread])
+	}
+	time.Sleep(1 * time.Second)
+	getarg = []interface{}{
+		"get", "hello",
+	}
+	getmap(mconn, getarg[1:])
+	nread, err = mconn.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	t.Log("buff:", string(buff))
+	if string(buff[:nread]) != "-1\r\n" {
+		t.Errorf("invalid reply, expected error(-1), got %s\n", buff[:nread])
+	}
 
-	// Close()
+	mconn.Close()
 
 }
