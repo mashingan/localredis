@@ -13,18 +13,18 @@ import (
 )
 
 var (
-	internalStorage   sync.Map
 	simpleStringRegex = regexp.MustCompile(`\+.*\r\n`)
 	errorRegex        = regexp.MustCompile(`-.*\r\n`)
 	integerRegex      = regexp.MustCompile(`:\d+\r\n`)
 	bulkStringRegex   = regexp.MustCompile(`\$\d+\r\n`)
 	arrayRegex        = regexp.MustCompile(`\*\d+\r\n`)
-	defaultClient     = Client{}
+	defaultClient     = Client{storage: sync.Map{}}
 )
 
 type redisType byte
 type Client struct {
 	listener net.Listener
+	storage  sync.Map
 }
 
 const (
@@ -214,6 +214,7 @@ func handleCommand(c net.Conn) {
 		} else {
 			rest = buff[:n]
 		}
+		log.Println("currbuf:", string(rest))
 		_, rest, err = interpret(c, rest)
 		if err != nil {
 			log.Println(err)
@@ -253,6 +254,7 @@ func interpret(c net.Conn, buff []byte) (complete bool, restbuf []byte, err erro
 		restbuf = buff[idx:]
 		log.Println(vals)
 		err = errstr
+		runCommand(c, vals)
 	case errorType:
 		if len(buff) > 1 && buff[1] == '1' {
 			return
