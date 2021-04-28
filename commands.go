@@ -165,6 +165,22 @@ func durationCalc(num int, timesetter string) (dur time.Duration) {
 	return
 }
 
+func timeout(arg interface{}, dur time.Duration) {
+	time.Sleep(dur)
+	keystr := arg.(string)
+	persist, ok := defaultClient.persist[keystr]
+	timeout, hasTo := defaultClient.timeout[keystr]
+	if !ok {
+		defaultClient.storage.Delete(arg)
+		delete(defaultClient.persist, keystr)
+		delete(defaultClient.timeout, keystr)
+	} else if persist || (hasTo && timeout.Before(time.Now())) {
+		delete(defaultClient.persist, keystr)
+		defaultClient.timeout[keystr] = time.Unix(0, 0)
+
+	}
+}
+
 func setExpiration(c net.Conn, args []interface{}) {
 	key := args[0]
 	rest := args[1:]
@@ -188,21 +204,7 @@ func setExpiration(c net.Conn, args []interface{}) {
 	log.Println("dur:", dur)
 	keystr := key.(string)
 	defaultClient.timeout[keystr] = time.Now().Add(dur)
-	go func(arg interface{}, dur time.Duration) {
-		time.Sleep(dur)
-		keystr := arg.(string)
-		persist, ok := defaultClient.persist[keystr]
-		timeout, hasTo := defaultClient.timeout[keystr]
-		if !ok {
-			defaultClient.storage.Delete(arg)
-			delete(defaultClient.persist, keystr)
-			delete(defaultClient.timeout, keystr)
-		} else if persist || (hasTo && timeout.Before(time.Now())) {
-			delete(defaultClient.persist, keystr)
-			defaultClient.timeout[keystr] = time.Unix(0, 0)
-
-		}
-	}(key, dur)
+	go timeout(key, dur)
 }
 
 type ttlKind string
