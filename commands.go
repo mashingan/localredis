@@ -194,7 +194,14 @@ func persist(c net.Conn, args []interface{}) {
 
 }
 
-func ttl(c net.Conn, args []interface{}) {
+type ttlKind string
+
+const (
+	ttlSecond      ttlKind = "second"
+	ttlMillisecond ttlKind = "millisecond"
+)
+
+func ttlimp(c net.Conn, args []interface{}, kind ttlKind) {
 	if len(args) < 1 {
 		sendError(c, "invalid format, no key sent")
 		return
@@ -219,6 +226,16 @@ func ttl(c net.Conn, args []interface{}) {
 		sendValue(c, -1)
 		return
 	}
-	secondToLive := time.Until(until).Round(time.Second).Seconds()
+	var secondToLive int
+	switch kind {
+	case ttlSecond:
+		secondToLive = int(time.Until(until).Round(time.Second).Seconds())
+	case ttlMillisecond:
+		secondToLive = int(time.Until(until).Round(time.Millisecond).Milliseconds())
+	}
 	sendValue(c, int(secondToLive))
+}
+
+func ttl(c net.Conn, args []interface{}) {
+	ttlimp(c, args, "second")
 }
