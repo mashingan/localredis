@@ -147,14 +147,21 @@ func getex(c net.Conn, args []interface{}) {
 			milnum := (int64(num) % secnum) * 1e6
 			dur = time.Until(time.Unix(secnum, milnum))
 		}
+		keystr := key.(string)
+		defaultClient.timeout[keystr] = time.Now().Add(dur)
 		go func(arg interface{}, dur time.Duration) {
 			time.Sleep(dur)
 			keystr := arg.(string)
 			persist, ok := defaultClient.persist[keystr]
+			timeout, hasTo := defaultClient.timeout[keystr]
 			if !ok {
 				defaultClient.storage.Delete(arg)
-			} else if persist {
 				delete(defaultClient.persist, keystr)
+				delete(defaultClient.timeout, keystr)
+			} else if persist || (hasTo && timeout.Before(time.Now())) {
+				delete(defaultClient.persist, keystr)
+				defaultClient.timeout[keystr] = time.Unix(0, 0)
+
 			}
 		}(key, dur)
 	}
@@ -197,15 +204,20 @@ func ttl(c net.Conn, args []interface{}) {
 		return
 	}
 	_, avail := defaultClient.storage.Load(key)
-	until, persisted := defaultClient.persist[key]
+	_, persisted := defaultClient.persist[key]
+	until, hasTimeout := defaultClient.timeout[key]
 	if !avail {
 		sendNil(c)
 		return
 	}
-	if !persisted {
+	if !persisted || !hasTimeout {
 		sendValue(c, -1)
 		return
 	}
-	secondToLive := time.Until(until).Round(time.Second).Seconds()
+	if until.Before(time.Now()) {
+		sendValue(c, -1)
+	}
+	// secondToLive := time.Until(until).Round(time.Second).Seconds()
+	secondToLive := -1
 	sendValue(c, secondToLive)
 }
