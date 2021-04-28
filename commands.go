@@ -57,9 +57,13 @@ var commandMap = map[string]commandExecutioner{
 func setmap(c net.Conn, args []interface{}) {
 	if len(args) < 2 {
 		sendError(c, fmt.Sprintf("invalid set command, need minimum 2 args, sent %d arg", len(args)))
+		return
 	}
 	switch v := args[0].(type) {
 	case string:
+		defaultClient.storage.Store(v, args[1])
+		sendOk(c)
+	default:
 		defaultClient.storage.Store(v, args[1])
 		sendOk(c)
 	}

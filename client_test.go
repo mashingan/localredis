@@ -1,9 +1,14 @@
 package localredis
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
+	"net"
 	"strings"
 	"testing"
+	"time"
 )
 
 func assertStr(t *testing.T, fetchstr, expected string, pos, expectpos int) {
@@ -176,5 +181,163 @@ func TestArray(t *testing.T) {
 	if theerr == nil || theerr.Error() != "Bar" {
 		t.Errorf("invalid error value, got %v, expected Bar", theerr)
 	}
+
+}
+
+type mockConn struct {
+	buffer *bytes.Buffer
+	closed bool
+	mockAddr
+	deadline time.Time
+}
+
+func (m *mockConn) Write(p []byte) (int, error) {
+	return m.buffer.Write(p)
+}
+
+func (m *mockConn) Read(p []byte) (int, error) {
+	return m.buffer.Write(p)
+}
+
+func (m *mockConn) Close() error {
+	if !m.closed {
+		return nil
+	}
+	return fmt.Errorf("already closed")
+}
+
+type mockAddr struct{}
+
+func (m *mockAddr) Network() string {
+	return "tcp"
+}
+func (m *mockAddr) String() string {
+	return "127.0.0.1"
+}
+
+func (m *mockConn) LocalAddr() net.Addr {
+	return &m.mockAddr
+}
+
+func (m *mockConn) RemoteAddr() net.Addr {
+	return &m.mockAddr
+}
+
+func (m *mockConn) SetDeadline(t time.Time) error {
+	m.deadline = t
+	return nil
+}
+
+func (m *mockConn) SetReadDeadline(t time.Time) error {
+	m.deadline = t
+	return nil
+}
+
+func (m *mockConn) SetWriteDeadline(t time.Time) error {
+	m.deadline = t
+	return nil
+}
+
+func newMockConn() *mockConn {
+	m := new(mockConn)
+	m.buffer = new(bytes.Buffer)
+	return m
+}
+
+func TestGetexSet(t *testing.T) {
+	// conn := newMockConn()
+	mconn := newMockConn()
+	sethello := []interface{}{
+		"set", "hello", "異世界",
+	}
+	setmap(mconn, sethello[1:])
+	buff := make([]byte, 128)
+	nread, err := mconn.buffer.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	if nread <= 0 {
+		t.Error("could not read")
+	}
+	t.Log("buff:", buff)
+	t.Log("nread:", nread)
+	if string(buff[:nread]) != "+OK\r\n" {
+		t.Errorf("invalid reply, expected OK, got %s\n", buff[:nread])
+	}
+	// nwrite, err := conn.Write([]byte(createReply(sethello)))
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// if nwrite <= 0 {
+	// 	t.Error("failed to write, sent zero bytes")
+	// }
+	// buff := make([]byte, 128)
+	// nread, err := conn.Read(buff)
+	// if err != nil && !errors.Is(err, io.EOF) {
+	// 	t.Fatal(err)
+	// }
+	// if string(buff[:nread]) != "+OK\r\n" {
+	// 	t.Errorf("invalid reply, expected OK, got %s\n", buff[:nread])
+	// }
+
+	// getarg := createReply([]interface{}{"get", "hello"})
+	// t.Log(getarg)
+	// nwrite, err = conn.Write([]byte(getarg))
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// if nwrite <= 0 {
+	// 	t.Error("failed to write, sent zero bytes")
+	// }
+	// nread, err = conn.Read(buff)
+	// if err != nil && !errors.Is(err, io.EOF) {
+	// 	t.Fatal(err)
+	// }
+	// t.Log("buff:", string(buff))
+	// if string(buff[:nread]) != createSimpleString("異世界") {
+	// 	t.Errorf("invalid reply, expected 異世界, got %s\n", buff[:nread])
+	// }
+
+	// getarg = createReply([]interface{}{
+	// 	"getex", "hello", "ex", 1,
+	// })
+	// t.Log(getarg)
+	// nwrite, err = conn.Write([]byte(getarg))
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// if nwrite <= 0 {
+	// 	t.Error("failed to write, sent zero bytes")
+	// }
+	// nread, err = conn.Read(buff)
+	// if err != nil && !errors.Is(err, io.EOF) {
+	// 	t.Fatal(err)
+	// }
+	// t.Log("buff:", string(buff))
+	// if string(buff[:nread]) != createSimpleString("異世界") {
+	// 	t.Errorf("invalid reply, expected 異世界, got %s\n", buff[:nread])
+	// }
+	// time.Sleep(1 * time.Second)
+	// getarg = createReply([]interface{}{
+	// 	"getex", "hello", "ex", 1,
+	// })
+	// t.Log(getarg)
+	// nwrite, err = conn.Write([]byte(getarg))
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// if nwrite <= 0 {
+	// 	t.Error("failed to write, sent zero bytes")
+	// }
+	// nread, err = conn.Read(buff)
+	// if err != nil && !errors.Is(err, io.EOF) {
+	// 	t.Fatal(err)
+	// }
+	// t.Log("buff:", string(buff))
+	// if string(buff[:nread]) != "-1\r\n" {
+	// 	t.Errorf("invalid reply, expected error(-1), got %s\n", buff[:nread])
+	// }
+
+	// Close()
 
 }
