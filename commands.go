@@ -119,53 +119,7 @@ func getex(c net.Conn, args []interface{}) {
 		return
 	}
 	if len(rest) > 1 {
-		timesetter, ok := rest[0].(string)
-		if !ok {
-			sendError(c, "invalid expiration option")
-			return
-		}
-		timesetter = strings.ToLower(timesetter)
-		if !validopt(timesetter) {
-			sendError(c, fmt.Sprintf(
-				"invalid expiration option, sent %s expected one of ex, px, eaxt, pxat", timesetter))
-			return
-		}
-		num, ok := rest[1].(int)
-		if !ok {
-			sendError(c, fmt.Sprintf("invalid numeric expiration, got %#v", rest[1]))
-			return
-		}
-		var dur time.Duration
-		switch timesetter {
-		case "ex":
-			dur = time.Duration(num) * time.Second
-		case "px":
-			dur = time.Duration(num) * time.Millisecond
-		case "exat":
-			dur = time.Until(time.Unix(int64(num), 0))
-		case "pxat":
-			secnum := int64(num / 1000)
-			milnum := (int64(num) % secnum) * 1e6
-			dur = time.Until(time.Unix(secnum, milnum))
-		}
-		log.Println("dur:", dur)
-		keystr := key.(string)
-		defaultClient.timeout[keystr] = time.Now().Add(dur)
-		go func(arg interface{}, dur time.Duration) {
-			time.Sleep(dur)
-			keystr := arg.(string)
-			persist, ok := defaultClient.persist[keystr]
-			timeout, hasTo := defaultClient.timeout[keystr]
-			if !ok {
-				defaultClient.storage.Delete(arg)
-				delete(defaultClient.persist, keystr)
-				delete(defaultClient.timeout, keystr)
-			} else if persist || (hasTo && timeout.Before(time.Now())) {
-				delete(defaultClient.persist, keystr)
-				defaultClient.timeout[keystr] = time.Unix(0, 0)
-
-			}
-		}(key, dur)
+		setExpiration(c, args)
 	}
 	sendValue(c, val)
 }
@@ -193,6 +147,58 @@ func persist(c net.Conn, args []interface{}) {
 	}
 	sendValue(c, 0)
 
+}
+
+func setExpiration(c net.Conn, args []interface{}) {
+	key := args[0]
+	rest := args[1:]
+	timesetter, ok := rest[0].(string)
+	if !ok {
+		sendError(c, "invalid expiration option")
+		return
+	}
+	timesetter = strings.ToLower(timesetter)
+	if !validopt(timesetter) {
+		sendError(c, fmt.Sprintf(
+			"invalid expiration option, sent %s expected one of ex, px, eaxt, pxat", timesetter))
+		return
+	}
+	num, ok := rest[1].(int)
+	if !ok {
+		sendError(c, fmt.Sprintf("invalid numeric expiration, got %#v", rest[1]))
+		return
+	}
+	var dur time.Duration
+	switch timesetter {
+	case "ex":
+		dur = time.Duration(num) * time.Second
+	case "px":
+		dur = time.Duration(num) * time.Millisecond
+	case "exat":
+		dur = time.Until(time.Unix(int64(num), 0))
+	case "pxat":
+		secnum := int64(num / 1000)
+		milnum := (int64(num) % secnum) * 1e6
+		dur = time.Until(time.Unix(secnum, milnum))
+	}
+	log.Println("dur:", dur)
+	keystr := key.(string)
+	defaultClient.timeout[keystr] = time.Now().Add(dur)
+	go func(arg interface{}, dur time.Duration) {
+		time.Sleep(dur)
+		keystr := arg.(string)
+		persist, ok := defaultClient.persist[keystr]
+		timeout, hasTo := defaultClient.timeout[keystr]
+		if !ok {
+			defaultClient.storage.Delete(arg)
+			delete(defaultClient.persist, keystr)
+			delete(defaultClient.timeout, keystr)
+		} else if persist || (hasTo && timeout.Before(time.Now())) {
+			delete(defaultClient.persist, keystr)
+			defaultClient.timeout[keystr] = time.Unix(0, 0)
+
+		}
+	}(key, dur)
 }
 
 type ttlKind string
