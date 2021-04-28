@@ -149,10 +149,10 @@ func getex(c net.Conn, args []interface{}) {
 		go func(arg interface{}, dur time.Duration) {
 			time.Sleep(dur)
 			keystr := arg.(string)
-			persist, ok := defaultClient.persist[keystr]
+			until, ok := defaultClient.persist[keystr]
 			if !ok {
 				defaultClient.storage.Delete(arg)
-			} else if persist {
+			} else if until.Unix() >= 0 {
 				delete(defaultClient.persist, keystr)
 			}
 		}(key, dur)
@@ -173,7 +173,7 @@ func persist(c net.Conn, args []interface{}) {
 	_, avail := defaultClient.storage.Load(key)
 	_, persisted := defaultClient.persist[key]
 	if avail && !persisted {
-		defaultClient.persist[key] = true
+		defaultClient.persist[key] = time.Unix(0, 0)
 		sendValue(c, 1)
 		return
 	}
