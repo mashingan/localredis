@@ -7,7 +7,8 @@ if the app/program is quitting.
 This implementation usually used for integration testing without having
 to run actual redis server as this is easy to run and close as the test starts and ends.  
 
-The it's for the convenience of testing, it's usually like example
+It's main usage why re-invented the wheel is for ease of mock testing without having fully-blown
+redis server installation. Mostly the usage can be summarized as below example:
 
 ```go
 package testing
@@ -25,9 +26,10 @@ func checkAppStates(t *testing.T, app.App) {
 func TestOurApp(t *testing.T) {
     redisAddr := ":8099"
     os.Setenv("REDIS_ADDR", redisAddr)
-    go localredis(redisAddr)
+    go localredis.ListenAndServe(redisAddr)
     apprun := app.Start()
     checkAppStates(t, apprun)
+    localredis.Close()
 }
 ```
 
