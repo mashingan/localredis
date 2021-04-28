@@ -172,13 +172,13 @@ func persist(c net.Conn, args []interface{}) {
 	}
 	_, avail := defaultClient.storage.Load(key)
 	_, persisted := defaultClient.persist[key]
-	if !avail || !persisted {
-		sendValue(c, 0)
-		return
-	}
-	if !persisted {
+	if avail && !persisted {
 		defaultClient.persist[key] = true
 		sendValue(c, 1)
+		return
+	}
+	if !avail && !persisted {
+		sendValue(c, 0)
 		return
 	}
 	sendValue(c, 0)

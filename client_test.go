@@ -304,3 +304,25 @@ func TestGetexSet(t *testing.T) {
 	mconn.Close()
 
 }
+
+func TestPersist(t *testing.T) {
+	mconn := newMockConn()
+	setarg := []interface{}{"hello", "異世界"}
+	setmap(mconn, setarg)
+	getarg := []interface{}{"hello"}
+	getargEx := append(getarg, "px", "500")
+	getex(mconn, getargEx)
+	mconn.buffer.Reset()
+	persist(mconn, getarg)
+	buff := make([]byte, 128)
+	nread, err := mconn.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	if nread <= 0 {
+		t.Error("could not read")
+	}
+	if string(buff[:nread]) != ":1\r\n" {
+		t.Errorf("invalid reply, expected 1, got %s\n", buff[:nread])
+	}
+}
