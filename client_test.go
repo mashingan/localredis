@@ -325,4 +325,18 @@ func TestPersist(t *testing.T) {
 	if string(buff[:nread]) != ":1\r\n" {
 		t.Errorf("invalid reply, expected 1, got %s\n", buff[:nread])
 	}
+	time.Sleep(500 * time.Millisecond)
+	mconn.buffer.Reset()
+	buff = make([]byte, 128)
+	getmap(mconn, getarg)
+	nread, err = mconn.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	if nread <= 0 {
+		t.Error("could not read")
+	}
+	if string(buff[:nread]) != createSimpleString("異世界") {
+		t.Errorf("invalid reply, expected +異世界\\r\\n, got %s\n", buff[:nread])
+	}
 }

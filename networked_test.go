@@ -53,7 +53,7 @@ func TestListenAndServe(t *testing.T) {
 	// }))
 }
 
-func TestGetexSet(t *testing.T) {
+func TestGetexSetLocal(t *testing.T) {
 	var w sync.WaitGroup
 	w.Add(1)
 	addr := ":9025"
