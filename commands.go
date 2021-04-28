@@ -43,6 +43,7 @@ var commandMap = map[string]commandExecutioner{
 	"set":  setmap,
 	"get":  getmap,
 	"ping": pong,
+	"quit": quit,
 }
 
 func setmap(c net.Conn, args []interface{}) {
@@ -72,4 +73,11 @@ func getmap(c net.Conn, args []interface{}) {
 
 func pong(c net.Conn, args []interface{}) {
 	c.Write([]byte(createSimpleString("PONG")))
+}
+
+func quit(c net.Conn, args []interface{}) {
+	if defaultClient.listener != nil {
+		defaultClient.listener.Close()
+	}
+	sendOk(c)
 }
