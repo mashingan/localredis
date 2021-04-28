@@ -45,7 +45,7 @@ will automatically put it on `go.mod` dependencies entry.
 
 # Contributing
 
-Adding supports for the new command by adding it to [`commandsMap`](commands.go#L42).
+Adding supports for the new command by adding it to [`commandMap`](commands.go#L48).
 
 # License
 
