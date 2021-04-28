@@ -103,6 +103,46 @@ func TestGetexSet(t *testing.T) {
 		t.Errorf("invalid reply, expected 異世界, got %s\n", buff[:nread])
 	}
 
+	getarg = createReply([]interface{}{
+		"getex", "hello", "ex", 1,
+	})
+	t.Log(getarg)
+	nwrite, err = conn.Write([]byte(getarg))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nwrite <= 0 {
+		t.Error("failed to write, sent zero bytes")
+	}
+	nread, err = conn.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	t.Log("buff:", string(buff))
+	if string(buff[:nread]) != createSimpleString("異世界") {
+		t.Errorf("invalid reply, expected 異世界, got %s\n", buff[:nread])
+	}
+	time.Sleep(1 * time.Second)
+	getarg = createReply([]interface{}{
+		"getex", "hello", "ex", 1,
+	})
+	t.Log(getarg)
+	nwrite, err = conn.Write([]byte(getarg))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nwrite <= 0 {
+		t.Error("failed to write, sent zero bytes")
+	}
+	nread, err = conn.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	t.Log("buff:", string(buff))
+	if string(buff[:nread]) != "-1\r\n" {
+		t.Errorf("invalid reply, expected error(-1), got %s\n", buff[:nread])
+	}
+
 	Close()
 	w.Wait()
 }
