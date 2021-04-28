@@ -340,3 +340,26 @@ func TestPersist(t *testing.T) {
 		t.Errorf("invalid reply, expected +異世界\\r\\n, got %s\n", buff[:nread])
 	}
 }
+
+func TestTTL(t *testing.T) {
+	mconn := newMockConn()
+	setarg := []interface{}{"hello", "異世界"}
+	setmap(mconn, setarg)
+	getarg := []interface{}{"hello"}
+	getargEx := append(getarg, "ex", "10")
+	getex(mconn, getargEx)
+	mconn.buffer.Reset()
+	ttl(mconn, getarg)
+	buff := make([]byte, 128)
+	nread, err := mconn.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	if nread <= 0 {
+		t.Error("could not read")
+	}
+	buffread := string(buff[:nread])
+	if !(buffread == ":10\r\n" || buffread == ":9\r\n") {
+		t.Errorf("invalid reply, expected 9 or 10, got %s\n", buffread)
+	}
+}
