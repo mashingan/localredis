@@ -437,3 +437,37 @@ func TestTTL(t *testing.T) {
 		t.Errorf("invalid reply, expected ~500, got %d\n", buffnum)
 	}
 }
+
+func TestExistKeys(t *testing.T) {
+	conn := newMockConn()
+	keys := []interface{}{"key1", "key2", "key3"}
+	okreply := createSimpleString("OK")
+	for i, k := range keys {
+		setmap(conn, []interface{}{k, i + 1})
+		buff := make([]byte, 10)
+		n, err := conn.Read(buff)
+		if err != nil && !errors.Is(err, io.EOF) {
+			t.Error(err)
+			if string(buff[:n]) != okreply {
+				t.Errorf("invalid set operation, expect ok but got %s\n", buff[:n])
+			}
+		}
+	}
+	toCheckKeys := append(keys, "not-exists")
+	args := []interface{}{"exists"}
+	args = append(args, toCheckKeys...)
+	conn.buffer.Reset()
+	t.Log("args:", args)
+	existsKeys(conn, args)
+	buff := make([]byte, 32)
+	nread, err := conn.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	buffread := string(buff[:nread])
+	var buffnum int
+	fmt.Sscanf(buffread, ":%d\r\n", &buffnum)
+	if buffnum != 3 {
+		t.Errorf("invalid checking keys, expect 3 keys, but got %d\n", buffnum)
+	}
+}

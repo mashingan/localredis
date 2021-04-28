@@ -17,6 +17,7 @@ var commandMap = map[string]commandExecutioner{
 	"persist": persist,
 	"ttl":     ttl,
 	"pptl":    pttl,
+	"exists":  existsKeys,
 }
 
 type commandExecutioner func(net.Conn, []interface{})
@@ -255,4 +256,19 @@ func ttl(c net.Conn, args []interface{}) {
 
 func pttl(c net.Conn, args []interface{}) {
 	ttlimp(c, args, "millisecond")
+}
+
+func existsKeys(c net.Conn, args []interface{}) {
+	if len(args) < 1 {
+		sendValue(c, 0)
+		return
+	}
+	totalKeys := 0
+	for _, key := range args {
+		_, ok := defaultClient.storage.Load(key)
+		if ok {
+			totalKeys++
+		}
+	}
+	sendValue(c, totalKeys)
 }
