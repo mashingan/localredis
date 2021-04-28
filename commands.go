@@ -52,6 +52,7 @@ var commandMap = map[string]commandExecutioner{
 	"quit":    quit,
 	"getex":   getex,
 	"persist": persist,
+	"ttl":     ttl,
 }
 
 func setmap(c net.Conn, args []interface{}) {
@@ -183,4 +184,28 @@ func persist(c net.Conn, args []interface{}) {
 	}
 	sendValue(c, 0)
 
+}
+
+func ttl(c net.Conn, args []interface{}) {
+	if len(args) < 1 {
+		sendError(c, "invalid format, no key sent")
+		return
+	}
+	key, ok := args[0].(string)
+	if !ok {
+		sendError(c, "invalid key type, need string")
+		return
+	}
+	_, avail := defaultClient.storage.Load(key)
+	until, persisted := defaultClient.persist[key]
+	if !avail {
+		sendNil(c)
+		return
+	}
+	if !persisted {
+		sendValue(c, -1)
+		return
+	}
+	secondToLive := time.Until(until).Round(time.Second).Seconds()
+	sendValue(c, secondToLive)
 }
