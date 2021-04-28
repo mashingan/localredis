@@ -8,6 +8,17 @@ import (
 	"time"
 )
 
+var commandMap = map[string]commandExecutioner{
+	"set":     setmap,
+	"get":     getmap,
+	"ping":    pong,
+	"quit":    quit,
+	"getex":   getex,
+	"persist": persist,
+	"ttl":     ttl,
+	"pptl":    pttl,
+}
+
 type commandExecutioner func(net.Conn, []interface{})
 
 func sendError(c net.Conn, msg string) (int, error) {
@@ -43,16 +54,6 @@ func runCommand(c net.Conn, vals []interface{}) {
 		return
 	}
 	cmd(c, vals[1:])
-}
-
-var commandMap = map[string]commandExecutioner{
-	"set":     setmap,
-	"get":     getmap,
-	"ping":    pong,
-	"quit":    quit,
-	"getex":   getex,
-	"persist": persist,
-	"ttl":     ttl,
 }
 
 func setmap(c net.Conn, args []interface{}) {
@@ -238,4 +239,8 @@ func ttlimp(c net.Conn, args []interface{}, kind ttlKind) {
 
 func ttl(c net.Conn, args []interface{}) {
 	ttlimp(c, args, "second")
+}
+
+func pttl(c net.Conn, args []interface{}) {
+	ttlimp(c, args, "millisecond")
 }
