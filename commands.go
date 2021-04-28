@@ -131,7 +131,7 @@ func getex(c net.Conn, args []interface{}) {
 		}
 		num, ok := rest[1].(int)
 		if !ok {
-			sendError(c, "invalid numeric expiration")
+			sendError(c, fmt.Sprintf("invalid numeric expiration, got %#v", rest[1]))
 			return
 		}
 		var dur time.Duration
@@ -147,6 +147,7 @@ func getex(c net.Conn, args []interface{}) {
 			milnum := (int64(num) % secnum) * 1e6
 			dur = time.Until(time.Unix(secnum, milnum))
 		}
+		log.Println("dur:", dur)
 		keystr := key.(string)
 		defaultClient.timeout[keystr] = time.Now().Add(dur)
 		go func(arg interface{}, dur time.Duration) {
@@ -210,14 +211,14 @@ func ttl(c net.Conn, args []interface{}) {
 		sendNil(c)
 		return
 	}
-	if !persisted || !hasTimeout {
+	if !persisted && !hasTimeout {
 		sendValue(c, -1)
 		return
 	}
 	if until.Before(time.Now()) {
 		sendValue(c, -1)
+		return
 	}
-	// secondToLive := time.Until(until).Round(time.Second).Seconds()
-	secondToLive := -1
-	sendValue(c, secondToLive)
+	secondToLive := time.Until(until).Round(time.Second).Seconds()
+	sendValue(c, int(secondToLive))
 }

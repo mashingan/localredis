@@ -310,7 +310,7 @@ func TestPersist(t *testing.T) {
 	setarg := []interface{}{"hello", "異世界"}
 	setmap(mconn, setarg)
 	getarg := []interface{}{"hello"}
-	getargEx := append(getarg, "px", "500")
+	getargEx := append(getarg, "px", 500)
 	getex(mconn, getargEx)
 	mconn.buffer.Reset()
 	persist(mconn, getarg)
@@ -345,12 +345,7 @@ func TestTTL(t *testing.T) {
 	mconn := newMockConn()
 	setarg := []interface{}{"hello", "異世界"}
 	setmap(mconn, setarg)
-	getarg := []interface{}{"hello"}
-	getargEx := append(getarg, "ex", "10")
-	getex(mconn, getargEx)
-	mconn.buffer.Reset()
-	ttl(mconn, getarg)
-	buff := make([]byte, 128)
+	buff := make([]byte, 64)
 	nread, err := mconn.Read(buff)
 	if err != nil && !errors.Is(err, io.EOF) {
 		t.Fatal(err)
@@ -359,6 +354,37 @@ func TestTTL(t *testing.T) {
 		t.Error("could not read")
 	}
 	buffread := string(buff[:nread])
+	if buffread != "+OK\r\n" {
+		t.Errorf("invalid reply, expected OK, got %s\n", buffread)
+	}
+	getarg := []interface{}{"hello"}
+	getargEx := append(getarg, "ex", 10)
+	t.Log("getargEx:", getargEx)
+	mconn.buffer.Reset()
+	getex(mconn, getargEx)
+	buff = make([]byte, 64)
+	nread, err = mconn.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	if nread <= 0 {
+		t.Error("could not read")
+	}
+	buffread = string(buff[:nread])
+	if buffread != createSimpleString("異世界") {
+		t.Errorf("invalid reply, expected 異世界, got %s\n", buffread)
+	}
+	mconn.buffer.Reset()
+	ttl(mconn, getarg)
+	buff = make([]byte, 64)
+	nread, err = mconn.Read(buff)
+	if err != nil && !errors.Is(err, io.EOF) {
+		t.Fatal(err)
+	}
+	if nread <= 0 {
+		t.Error("could not read")
+	}
+	buffread = string(buff[:nread])
 	if !(buffread == ":10\r\n" || buffread == ":9\r\n") {
 		t.Errorf("invalid reply, expected 9 or 10, got %s\n", buffread)
 	}
