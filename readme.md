@@ -3,7 +3,7 @@
 [![Go](https://github.com/mashingan/localredis/actions/workflows/go.yml/badge.svg?branch=master)](https://github.com/mashingan/localredis/actions/workflows/go.yml)
 
 Local implementation of redis protocol. The storage in entirely put in the memory and will be lost
-if the app/program is quitting.  
+when the app/program is quitting.  
 This implementation usually used for integration testing without having
 to run actual redis server as this is easy to run and close as the test starts and ends.  
 
