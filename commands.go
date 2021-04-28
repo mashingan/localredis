@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 )
 
 type commandExecutioner func(net.Conn, []interface{})
@@ -19,6 +20,11 @@ func sendNil(c net.Conn) (int, error) {
 
 func sendOk(c net.Conn) (int, error) {
 	return c.Write([]byte("+OK\r\n"))
+}
+
+func sendValue(c net.Conn, value interface{}) (int, error) {
+	return c.Write([]byte(createReply(value)))
+
 }
 
 func runCommand(c net.Conn, vals []interface{}) {
@@ -40,10 +46,11 @@ func runCommand(c net.Conn, vals []interface{}) {
 }
 
 var commandMap = map[string]commandExecutioner{
-	"set":  setmap,
-	"get":  getmap,
-	"ping": pong,
-	"quit": quit,
+	"set":   setmap,
+	"get":   getmap,
+	"ping":  pong,
+	"quit":  quit,
+	"getex": getex,
 }
 
 func setmap(c net.Conn, args []interface{}) {
@@ -76,8 +83,68 @@ func pong(c net.Conn, args []interface{}) {
 }
 
 func quit(c net.Conn, args []interface{}) {
+	sendOk(c)
 	if defaultClient.listener != nil {
 		defaultClient.listener.Close()
 	}
-	sendOk(c)
+}
+
+var expireSettingOpt = []string{"ex", "px", "exat", "pxat"}
+
+func validopt(s string) bool {
+	for _, o := range expireSettingOpt {
+		if o == s {
+			return true
+		}
+	}
+	return false
+}
+func getex(c net.Conn, args []interface{}) {
+	if len(args) <= 1 {
+		getmap(c, args)
+		return
+	}
+	rest := args[1:]
+	key := args[0]
+	val, ok := defaultClient.storage.Load(key)
+	if !ok {
+		sendNil(c)
+		return
+	}
+	if len(rest) > 1 {
+		timesetter, ok := rest[0].(string)
+		if !ok {
+			sendError(c, "invalid expiration option")
+			return
+		}
+		timesetter = strings.ToLower(timesetter)
+		if !validopt(timesetter) {
+			sendError(c, fmt.Sprintf(
+				"invalid expiration option, sent %s expected one of ex, px, eaxt, pxat", timesetter))
+			return
+		}
+		num, ok := rest[1].(int)
+		if !ok {
+			sendError(c, "invalid numeric expiration")
+			return
+		}
+		var dur time.Duration
+		switch timesetter {
+		case "ex":
+			dur = time.Duration(num) * time.Second
+		case "px":
+			dur = time.Duration(num) * time.Millisecond
+		case "exat":
+			dur = time.Until(time.Unix(int64(num), 0))
+		case "pxat":
+			secnum := int64(num / 1000)
+			milnum := (int64(num) % secnum) * 1e6
+			dur = time.Until(time.Unix(secnum, milnum))
+		}
+		go func(arg interface{}, dur time.Duration) {
+			time.Sleep(dur)
+			defaultClient.storage.Delete(arg)
+		}(key, dur)
+	}
+	sendValue(c, val)
 }
