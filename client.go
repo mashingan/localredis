@@ -25,6 +25,7 @@ type redisType byte
 type Client struct {
 	listener net.Listener
 	storage  sync.Map
+	persist  map[string]bool
 }
 
 const (
