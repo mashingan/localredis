@@ -22,31 +22,31 @@ var commandMap = map[string]CommandExecutioner{
 
 type CommandExecutioner func(net.Conn, []interface{})
 
-func sendError(c net.Conn, msg string) (int, error) {
+func SendError(c net.Conn, msg string) (int, error) {
 	return c.Write([]byte(fmt.Sprintf("-%s\r\n", msg)))
 }
 
-func sendNil(c net.Conn) (int, error) {
+func SendNil(c net.Conn) (int, error) {
 	return c.Write([]byte("-1\r\n"))
 }
 
-func sendOk(c net.Conn) (int, error) {
+func SendOk(c net.Conn) (int, error) {
 	return c.Write([]byte("+OK\r\n"))
 }
 
-func sendValue(c net.Conn, value interface{}) (int, error) {
+func SendValue(c net.Conn, value interface{}) (int, error) {
 	return c.Write([]byte(CreateReply(value)))
 
 }
 
 func runCommand(c net.Conn, vals []interface{}) {
 	if len(vals) < 1 {
-		sendError(c, "invalid command format")
+		SendError(c, "invalid command format")
 		return
 	}
 	command, ok := vals[0].(string)
 	if !ok {
-		sendError(c, "invalid command type")
+		SendError(c, "invalid command type")
 		return
 	}
 	cmd, ok := commandMap[strings.ToLower(command)]
@@ -59,33 +59,33 @@ func runCommand(c net.Conn, vals []interface{}) {
 
 func setmap(c net.Conn, args []interface{}) {
 	if len(args) < 2 {
-		sendError(c, fmt.Sprintf("invalid set command, need minimum 2 args, sent %d arg", len(args)))
+		SendError(c, fmt.Sprintf("invalid set command, need minimum 2 args, sent %d arg", len(args)))
 		return
 	}
 	switch v := args[0].(type) {
 	case string:
 		defaultClient.storage.Store(v, args[1])
-		sendOk(c)
+		SendOk(c)
 	default:
 		defaultClient.storage.Store(v, args[1])
-		sendOk(c)
+		SendOk(c)
 	}
 }
 
 func getmap(c net.Conn, args []interface{}) {
 	if len(args) < 1 {
-		sendError(c, "invalid set command, need minimum 1 args, sent 0 arg")
+		SendError(c, "invalid set command, need minimum 1 args, sent 0 arg")
 	}
 	switch v := args[0].(type) {
 	case string:
 		val, ok := defaultClient.storage.Load(v)
 		if !ok {
-			sendNil(c)
+			SendNil(c)
 		}
 		c.Write([]byte(CreateReply(val)))
 		return
 	}
-	sendNil(c)
+	SendNil(c)
 }
 
 func pong(c net.Conn, args []interface{}) {
@@ -93,7 +93,7 @@ func pong(c net.Conn, args []interface{}) {
 }
 
 func quit(c net.Conn, args []interface{}) {
-	sendOk(c)
+	SendOk(c)
 	if defaultClient.listener != nil {
 		defaultClient.listener.Close()
 	}
@@ -118,37 +118,37 @@ func getex(c net.Conn, args []interface{}) {
 	key := args[0]
 	val, ok := defaultClient.storage.Load(key)
 	if !ok {
-		sendNil(c)
+		SendNil(c)
 		return
 	}
 	if len(rest) > 1 {
 		setExpiration(c, args)
 	}
-	sendValue(c, val)
+	SendValue(c, val)
 }
 
 func persist(c net.Conn, args []interface{}) {
 	if len(args) < 1 {
-		sendError(c, "invalid format, no key sent")
+		SendError(c, "invalid format, no key sent")
 		return
 	}
 	key, ok := args[0].(string)
 	if !ok {
-		sendError(c, "invalid key type, need string")
+		SendError(c, "invalid key type, need string")
 		return
 	}
 	_, avail := defaultClient.storage.Load(key)
 	_, persisted := defaultClient.persist[key]
 	if avail && !persisted {
 		defaultClient.persist[key] = true
-		sendValue(c, 1)
+		SendValue(c, 1)
 		return
 	}
 	if !avail && !persisted {
-		sendValue(c, 0)
+		SendValue(c, 0)
 		return
 	}
-	sendValue(c, 0)
+	SendValue(c, 0)
 
 }
 
@@ -189,18 +189,18 @@ func setExpiration(c net.Conn, args []interface{}) {
 	rest := args[1:]
 	timesetter, ok := rest[0].(string)
 	if !ok {
-		sendError(c, "invalid expiration option")
+		SendError(c, "invalid expiration option")
 		return
 	}
 	timesetter = strings.ToLower(timesetter)
 	if !validopt(timesetter) {
-		sendError(c, fmt.Sprintf(
+		SendError(c, fmt.Sprintf(
 			"invalid expiration option, sent %s expected one of ex, px, eaxt, pxat", timesetter))
 		return
 	}
 	num, ok := rest[1].(int)
 	if !ok {
-		sendError(c, fmt.Sprintf("invalid numeric expiration, got %#v", rest[1]))
+		SendError(c, fmt.Sprintf("invalid numeric expiration, got %#v", rest[1]))
 		return
 	}
 	dur := durationCalc(num, timesetter)
@@ -219,27 +219,27 @@ const (
 
 func ttlimp(c net.Conn, args []interface{}, kind ttlKind) {
 	if len(args) < 1 {
-		sendError(c, "invalid format, no key sent")
+		SendError(c, "invalid format, no key sent")
 		return
 	}
 	key, ok := args[0].(string)
 	if !ok {
-		sendError(c, "invalid key type, need string")
+		SendError(c, "invalid key type, need string")
 		return
 	}
 	_, avail := defaultClient.storage.Load(key)
 	_, persisted := defaultClient.persist[key]
 	until, hasTimeout := defaultClient.timeout[key]
 	if !avail {
-		sendNil(c)
+		SendNil(c)
 		return
 	}
 	if !persisted && !hasTimeout {
-		sendValue(c, -1)
+		SendValue(c, -1)
 		return
 	}
 	if until.Before(time.Now()) {
-		sendValue(c, -1)
+		SendValue(c, -1)
 		return
 	}
 	var secondToLive int
@@ -249,7 +249,7 @@ func ttlimp(c net.Conn, args []interface{}, kind ttlKind) {
 	case ttlMillisecond:
 		secondToLive = int(time.Until(until).Round(time.Millisecond).Milliseconds())
 	}
-	sendValue(c, int(secondToLive))
+	SendValue(c, int(secondToLive))
 }
 
 func ttl(c net.Conn, args []interface{}) {
@@ -262,7 +262,7 @@ func pttl(c net.Conn, args []interface{}) {
 
 func existsKeys(c net.Conn, args []interface{}) {
 	if len(args) < 1 {
-		sendValue(c, 0)
+		SendValue(c, 0)
 		return
 	}
 	totalKeys := 0
@@ -272,5 +272,5 @@ func existsKeys(c net.Conn, args []interface{}) {
 			totalKeys++
 		}
 	}
-	sendValue(c, totalKeys)
+	SendValue(c, totalKeys)
 }

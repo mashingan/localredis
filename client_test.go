@@ -420,17 +420,17 @@ func TestCommandOverriding(t *testing.T) {
 	CommandOverride("set", func(c net.Conn, args []interface{}) {
 		// set need minimum of 2 args
 		if len(args) < 2 {
-			sendError(c, fmt.Sprintf("invalid args, need minimum 2, got %d", len(args)))
+			SendError(c, fmt.Sprintf("invalid args, need minimum 2, got %d", len(args)))
 			return
 		}
 		argkey, ok := args[0].(string)
 		if !ok {
-			sendError(c, fmt.Sprintf("invalid key type, need string, provided %T", args[0]))
+			SendError(c, fmt.Sprintf("invalid key type, need string, provided %T", args[0]))
 			return
 		}
 		key = argkey
 		valueSet = args[1]
-		sendOk(c)
+		SendOk(c)
 	})
 	interpret(conn, []byte(CreateReply([]interface{}{
 		"set", "hello", "異世界",
