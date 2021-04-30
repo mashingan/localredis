@@ -1,11 +1,9 @@
 package localredis
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
-	"net"
 	"strings"
 	"testing"
 	"time"
@@ -184,68 +182,8 @@ func TestArray(t *testing.T) {
 
 }
 
-type mockConn struct {
-	buffer *bytes.Buffer
-	closed bool
-	mockAddr
-	deadline time.Time
-}
-
-func (m *mockConn) Write(p []byte) (int, error) {
-	return m.buffer.Write(p)
-}
-
-func (m *mockConn) Read(p []byte) (int, error) {
-	return m.buffer.Read(p)
-}
-
-func (m *mockConn) Close() error {
-	if !m.closed {
-		return nil
-	}
-	return fmt.Errorf("already closed")
-}
-
-type mockAddr struct{}
-
-func (m *mockAddr) Network() string {
-	return "tcp"
-}
-func (m *mockAddr) String() string {
-	return "127.0.0.1"
-}
-
-func (m *mockConn) LocalAddr() net.Addr {
-	return &m.mockAddr
-}
-
-func (m *mockConn) RemoteAddr() net.Addr {
-	return &m.mockAddr
-}
-
-func (m *mockConn) SetDeadline(t time.Time) error {
-	m.deadline = t
-	return nil
-}
-
-func (m *mockConn) SetReadDeadline(t time.Time) error {
-	m.deadline = t
-	return nil
-}
-
-func (m *mockConn) SetWriteDeadline(t time.Time) error {
-	m.deadline = t
-	return nil
-}
-
-func newMockConn() *mockConn {
-	m := new(mockConn)
-	m.buffer = new(bytes.Buffer)
-	return m
-}
-
 func TestGetexSet(t *testing.T) {
-	mconn := newMockConn()
+	mconn := NewConnOverride()
 	sethello := []interface{}{
 		"set", "hello", "異世界",
 	}
@@ -306,7 +244,7 @@ func TestGetexSet(t *testing.T) {
 }
 
 func TestPersist(t *testing.T) {
-	mconn := newMockConn()
+	mconn := NewConnOverride()
 	setarg := []interface{}{"hello", "異世界"}
 	setmap(mconn, setarg)
 	getarg := []interface{}{"hello"}
@@ -342,7 +280,7 @@ func TestPersist(t *testing.T) {
 }
 
 func TestTTL(t *testing.T) {
-	mconn := newMockConn()
+	mconn := NewConnOverride()
 	setarg := []interface{}{"hello", "異世界"}
 	setmap(mconn, setarg)
 	buff := make([]byte, 64)
@@ -439,7 +377,7 @@ func TestTTL(t *testing.T) {
 }
 
 func TestExistKeys(t *testing.T) {
-	conn := newMockConn()
+	conn := NewConnOverride()
 	keys := []interface{}{"key1", "key2", "key3"}
 	okreply := createSimpleString("OK")
 	for i, k := range keys {
