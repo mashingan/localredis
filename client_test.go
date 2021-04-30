@@ -432,7 +432,7 @@ func TestCommandOverriding(t *testing.T) {
 		valueSet = args[1]
 		sendOk(c)
 	})
-	interpret(conn, []byte(createReply([]interface{}{
+	interpret(conn, []byte(CreateReply([]interface{}{
 		"set", "hello", "異世界",
 	})))
 	buff := make([]byte, 32)

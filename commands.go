@@ -35,7 +35,7 @@ func sendOk(c net.Conn) (int, error) {
 }
 
 func sendValue(c net.Conn, value interface{}) (int, error) {
-	return c.Write([]byte(createReply(value)))
+	return c.Write([]byte(CreateReply(value)))
 
 }
 
@@ -82,7 +82,7 @@ func getmap(c net.Conn, args []interface{}) {
 		if !ok {
 			sendNil(c)
 		}
-		c.Write([]byte(createReply(val)))
+		c.Write([]byte(CreateReply(val)))
 		return
 	}
 	sendNil(c)

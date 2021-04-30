@@ -324,7 +324,7 @@ func createArrayRepr(arrs []interface{}) (result string) {
 	return
 }
 
-func createReply(arg interface{}) (result string) {
+func CreateReply(arg interface{}) (result string) {
 	switch v := arg.(type) {
 	case string:
 		if strings.Contains(v, "\n") || strings.Contains(v, "\x00") {

@@ -69,7 +69,7 @@ func TestGetexSetLocal(t *testing.T) {
 	sethello := []interface{}{
 		"set", "hello", "異世界",
 	}
-	nwrite, err := conn.Write([]byte(createReply(sethello)))
+	nwrite, err := conn.Write([]byte(CreateReply(sethello)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestGetexSetLocal(t *testing.T) {
 		t.Errorf("invalid reply, expected OK, got %s\n", buff[:nread])
 	}
 
-	getarg := createReply([]interface{}{"get", "hello"})
+	getarg := CreateReply([]interface{}{"get", "hello"})
 	t.Log(getarg)
 	nwrite, err = conn.Write([]byte(getarg))
 	if err != nil {
@@ -103,7 +103,7 @@ func TestGetexSetLocal(t *testing.T) {
 		t.Errorf("invalid reply, expected 異世界, got %s\n", buff[:nread])
 	}
 
-	getarg = createReply([]interface{}{
+	getarg = CreateReply([]interface{}{
 		"getex", "hello", "ex", 1,
 	})
 	t.Log(getarg)
@@ -123,7 +123,7 @@ func TestGetexSetLocal(t *testing.T) {
 		t.Errorf("invalid reply, expected 異世界, got %s\n", buff[:nread])
 	}
 	time.Sleep(1 * time.Second)
-	getarg = createReply([]interface{}{
+	getarg = CreateReply([]interface{}{
 		"getex", "hello", "ex", 1,
 	})
 	t.Log(getarg)
