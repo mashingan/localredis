@@ -66,3 +66,7 @@ func NewConnOverride() *ConnOverride {
 	m.buffer = new(bytes.Buffer)
 	return m
 }
+
+func CommandOverride(cmd string, exec CommandExecutioner) {
+	commandMap[cmd] = exec
+}

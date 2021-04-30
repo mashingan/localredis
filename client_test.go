@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"strings"
 	"testing"
 	"time"
@@ -407,5 +408,51 @@ func TestExistKeys(t *testing.T) {
 	fmt.Sscanf(buffread, ":%d\r\n", &buffnum)
 	if buffnum != 3 {
 		t.Errorf("invalid checking keys, expect 3 keys, but got %d\n", buffnum)
+	}
+}
+
+func TestCommandOverriding(t *testing.T) {
+	conn := NewConnOverride()
+	var (
+		valueSet interface{}
+		key      string
+	)
+	CommandOverride("set", func(c net.Conn, args []interface{}) {
+		// set need minimum of 2 args
+		if len(args) < 2 {
+			sendError(c, fmt.Sprintf("invalid args, need minimum 2, got %d", len(args)))
+			return
+		}
+		argkey, ok := args[0].(string)
+		if !ok {
+			sendError(c, fmt.Sprintf("invalid key type, need string, provided %T", args[0]))
+			return
+		}
+		key = argkey
+		valueSet = args[1]
+		sendOk(c)
+	})
+	interpret(conn, []byte(createReply([]interface{}{
+		"set", "hello", "異世界",
+	})))
+	buff := make([]byte, 32)
+	nread, err := conn.Read(buff)
+	if !(err == nil || errors.Is(err, io.EOF)) {
+		t.Fatal(err)
+	}
+	buffread := string(buff[:nread])
+	if buffread != createSimpleString("OK") {
+		t.Errorf("fail reading reply, expecting +OK\\r\\n, got %s\n", buffread)
+	}
+	if key != "hello" {
+		t.Fatalf("set override failed, expect key 'hello', got '%s'\n", key)
+	}
+	valueStr, ok := valueSet.(string)
+	if !ok {
+		t.Fatalf("invalid set value type, expect string, got %T\n", valueSet)
+	}
+	if valueStr != "異世界" {
+		t.Fatalf("set override failed, expect value '異世界', got '%s'\n", valueStr)
+
 	}
 }
