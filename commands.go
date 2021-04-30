@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var commandMap = map[string]commandExecutioner{
+var commandMap = map[string]CommandExecutioner{
 	"set":     setmap,
 	"get":     getmap,
 	"ping":    pong,
@@ -20,7 +20,7 @@ var commandMap = map[string]commandExecutioner{
 	"exists":  existsKeys,
 }
 
-type commandExecutioner func(net.Conn, []interface{})
+type CommandExecutioner func(net.Conn, []interface{})
 
 func sendError(c net.Conn, msg string) (int, error) {
 	return c.Write([]byte(fmt.Sprintf("-%s\r\n", msg)))
