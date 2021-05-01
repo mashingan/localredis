@@ -62,14 +62,16 @@ func setmap(c net.Conn, args []interface{}) {
 		SendError(c, fmt.Sprintf("invalid set command, need minimum 2 args, sent %d arg", len(args)))
 		return
 	}
-	switch v := args[0].(type) {
-	case string:
-		defaultClient.storage.Store(v, args[1])
-		SendOk(c)
-	default:
-		defaultClient.storage.Store(v, args[1])
-		SendOk(c)
+	v, ok := args[0].(string)
+	if !ok {
+		SendError(c, fmt.Sprintf("invalid key format, expected string got %T", args[0]))
+		return
 	}
+	if len(args[1:]) > 1 {
+		setExpiration(c, args)
+	}
+	defaultClient.storage.Store(v, args[1])
+	SendOk(c)
 }
 
 func getmap(c net.Conn, args []interface{}) {
