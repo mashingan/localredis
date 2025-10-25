@@ -1,3 +1,4 @@
+//go:build local
 // +build local
 
 package localredis
@@ -14,7 +15,7 @@ import (
 func TestListenAndServe(t *testing.T) {
 	var w sync.WaitGroup
 	w.Add(1)
-	addr := ":9025"
+	addr := "localhost:9025"
 	// go ListenAndServe(addr)
 	go func(wg *sync.WaitGroup) {
 		defer w.Done()
@@ -56,7 +57,7 @@ func TestListenAndServe(t *testing.T) {
 func TestGetexSetLocal(t *testing.T) {
 	var w sync.WaitGroup
 	w.Add(1)
-	addr := ":9025"
+	addr := "localhost:9025"
 	// go ListenAndServe(addr)
 	go func(wg *sync.WaitGroup) {
 		defer w.Done()

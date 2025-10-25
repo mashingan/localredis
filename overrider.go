@@ -8,18 +8,10 @@ import (
 )
 
 type ConnOverride struct {
-	buffer *bytes.Buffer
+	*bytes.Buffer
 	closed bool
 	AddrOverride
 	deadline time.Time
-}
-
-func (m *ConnOverride) Write(p []byte) (int, error) {
-	return m.buffer.Write(p)
-}
-
-func (m *ConnOverride) Read(p []byte) (int, error) {
-	return m.buffer.Read(p)
 }
 
 func (m *ConnOverride) Close() error {
@@ -63,7 +55,7 @@ func (m *ConnOverride) SetWriteDeadline(t time.Time) error {
 
 func NewConnOverride() *ConnOverride {
 	m := new(ConnOverride)
-	m.buffer = new(bytes.Buffer)
+	m.Buffer = new(bytes.Buffer)
 	return m
 }
 

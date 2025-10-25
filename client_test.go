@@ -201,7 +201,7 @@ func TestGetexSet(t *testing.T) {
 		t.Errorf("invalid reply, expected OK, got %s\n", buff[:nread])
 	}
 
-	mconn.buffer.Reset()
+	mconn.Reset()
 	getarg := []interface{}{"get", "hello"}
 	getmap(mconn, getarg[1:])
 	nread, err = mconn.Read(buff)
@@ -213,7 +213,7 @@ func TestGetexSet(t *testing.T) {
 		t.Errorf("invalid reply, expected 異世界, got %s\n", buff[:nread])
 	}
 
-	mconn.buffer.Reset()
+	mconn.Reset()
 	getarg = []interface{}{
 		"getex", "hello", "ex", 1,
 	}
@@ -251,7 +251,7 @@ func TestPersist(t *testing.T) {
 	getarg := []interface{}{"hello"}
 	getargEx := append(getarg, "px", 500)
 	getex(mconn, getargEx)
-	mconn.buffer.Reset()
+	mconn.Reset()
 	persist(mconn, getarg)
 	buff := make([]byte, 128)
 	nread, err := mconn.Read(buff)
@@ -265,7 +265,7 @@ func TestPersist(t *testing.T) {
 		t.Errorf("invalid reply, expected 1, got %s\n", buff[:nread])
 	}
 	time.Sleep(500 * time.Millisecond)
-	mconn.buffer.Reset()
+	mconn.Reset()
 	buff = make([]byte, 128)
 	getmap(mconn, getarg)
 	nread, err = mconn.Read(buff)
@@ -299,7 +299,7 @@ func TestTTL(t *testing.T) {
 	getarg := []interface{}{"hello"}
 	getargEx := append(getarg, "ex", 10)
 	t.Log("getargEx:", getargEx)
-	mconn.buffer.Reset()
+	mconn.Reset()
 	getex(mconn, getargEx)
 	buff = make([]byte, 64)
 	nread, err = mconn.Read(buff)
@@ -313,7 +313,7 @@ func TestTTL(t *testing.T) {
 	if buffread != createSimpleString("異世界") {
 		t.Errorf("invalid reply, expected 異世界, got %s\n", buffread)
 	}
-	mconn.buffer.Reset()
+	mconn.Reset()
 	ttl(mconn, getarg)
 	buff = make([]byte, 64)
 	nread, err = mconn.Read(buff)
@@ -357,7 +357,7 @@ func TestTTL(t *testing.T) {
 	if buffread != createSimpleString("新たな稼働") {
 		t.Errorf("invalid reply, expected 新たな稼働, got %s\n", buffread)
 	}
-	mconn.buffer.Reset()
+	mconn.Reset()
 	pttl(mconn, arg)
 	buff = make([]byte, 64)
 	nread, err = mconn.Read(buff)
@@ -395,7 +395,7 @@ func TestExistKeys(t *testing.T) {
 	toCheckKeys := append(keys, "not-exists")
 	args := []interface{}{"exists"}
 	args = append(args, toCheckKeys...)
-	conn.buffer.Reset()
+	conn.Reset()
 	t.Log("args:", args)
 	existsKeys(conn, args)
 	buff := make([]byte, 32)
