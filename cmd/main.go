@@ -1,9 +1,16 @@
 package main
 
-import "github.com/mashingan/localredis"
+import (
+	"flag"
+
+	"github.com/mashingan/localredis"
+)
+
+var raddr = flag.String("addr", redisListenAddr, "set address to listen")
 
 func main() {
-	localredis.ListenAndServe(redisListenAddr)
+	flag.Parse()
+	localredis.ListenAndServe(*raddr)
 }
 
 const (

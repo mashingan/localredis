@@ -18,6 +18,7 @@ var commandMap = map[string]CommandExecutioner{
 	"ttl":     ttl,
 	"pptl":    pttl,
 	"exists":  existsKeys,
+	"hello":   hello,
 }
 
 type CommandExecutioner func(net.Conn, []interface{})
@@ -52,6 +53,7 @@ func runCommand(c net.Conn, vals []interface{}) {
 	cmd, ok := commandMap[strings.ToLower(command)]
 	if !ok {
 		log.Printf("no command strings.ToLower(%s)\n", command)
+		SendOk(c)
 		return
 	}
 	cmd(c, vals[1:])
@@ -275,4 +277,25 @@ func existsKeys(c net.Conn, args []interface{}) {
 		}
 	}
 	SendValue(c, totalKeys)
+}
+
+func hello(c net.Conn, args []any) {
+	if len(args) <= 0 {
+		SendError(c, "invalid version number")
+		return
+	}
+	v, ok := args[0].(int)
+	if !ok {
+		SendError(c, "proto version is not number")
+		return
+	}
+	if v > 2 {
+		SendError(c, "unknown command 'hello'")
+	}
+	// const reply = `server: "localredis"
+	// version: 0.1
+	// proto: 3`
+
+	// _ = v
+	// c.Write([]byte(CreateReply(reply)))
 }
